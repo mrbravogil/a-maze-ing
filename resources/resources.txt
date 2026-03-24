@@ -1,14 +1,28 @@
 Conceptos Clave
 
+XPM
+https://www.fileformat.info/format/xpm/egff.htm
+
 Algoritmos
 
 Backtracking, Wilson
-Breadth FIrst Search
+
+
+https://www.geeksforgeeks.org/dsa/backtracking-algorithm-in-python/
+https://healeycodes.com/generating-mazes
+
+Breadth First Search
+
+https://www.geeksforgeeks.org/python/python-program-for-breadth-first-search-or-bfs-for-a-graph/
+
 
 Rendering
 
-MiniLib
+MiniLibX
 MLX
+
+Technical 
+
 
 
 Youtube
