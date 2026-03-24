@@ -1,0 +1,17 @@
+Conceptos Clave
+
+Algoritmos
+
+Backtracking, Wilson
+Breadth FIrst Search
+
+Rendering
+
+MiniLib
+MLX
+
+
+Youtube
+
+https://www.youtube.com/watch?v=b5klcPESt_g
+
