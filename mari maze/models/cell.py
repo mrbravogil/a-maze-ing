@@ -8,8 +8,8 @@ class Cell:
         self.entrance: bool = false
         self.exit: bool = false
         self.walls: dict = {
-            'right': True,
-            'left': True,
-            'top': True,
-            'bottom': True
+            'east': True,
+            'south': True,
+            'west': True,
+            'north': True
         }
