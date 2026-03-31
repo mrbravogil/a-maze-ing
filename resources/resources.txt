@@ -29,3 +29,34 @@ Youtube
 
 https://www.youtube.com/watch?v=b5klcPESt_g
 
+
+Estructura
+
+main.py
+
+maze.py
+
+crea la clase celda o maze
+y sus funciones
+
+definicion de movimientos
+
+crear coordenadas de 42
+
+posibilidad - crear laberinto, todas las celdas tienen 
+se crean a la vez con sus 4 paredes y a medida que vas
+abanzando derrumbas paredes
+
+condiciones
+
+- no puedes volver a visitar celdas ya visitadas
+- no puedes salirte del width o del height
+- al derrumbar una pared se debe derrumbar la pared
+de la celda en la que estas y la que vas a visitar
+- entrada y salida deben de estar dentro del ancho y largo,
+y no puede estar dentro del 42
+
+main.py
+
+renderiza el laberinto, ejecuta y procesa el menu
+
