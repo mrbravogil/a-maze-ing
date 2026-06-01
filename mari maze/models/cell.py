@@ -1,15 +1,12 @@
-""" Clase Celda """
-
 class Cell:
-    def __init__(self, x: int, y: int, visited: bool) -> None:
-        self.x: int = x
-        self.y: int = y
-        self.visited: bool = false
-        self.entrance: bool = false
-        self.exit: bool = false
-        self.walls: dict = {
-            'east': True,
-            'south': True,
-            'west': True,
-            'north': True
-        }
+    """ Cell Class """
+    def __init__(
+            self,
+            walls: int = 15,
+            static: bool = False,
+            visited: bool = False) -> None:
+        self.walls = walls
+        self.static = static
+        self.visited = False
+        self.entrance: bool = False
+        self.exit: bool = False
