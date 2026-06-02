@@ -1,5 +1,4 @@
-from .maze import Maze
-from .cell import Cell
+from . import Maze, Cell
 
 
 class MazeGenerator:
@@ -11,7 +10,7 @@ class MazeGenerator:
      ) -> None:
         maze_class = Maze()
         self.width = maze_class.width
-        self.heigth = maze_class.heigth
+        self.height = maze_class.height
         self.animation = animation
         self.maze = maze_class.grid
         self.seed = seed
@@ -22,13 +21,15 @@ class MazeGenerator:
         self.maze_init()
 
     def maze_init(self) -> None:
-        for y in range(self.heigth):
-            row: list = []
+        for y in range(self.height):
+            row: list[Cell] = []
             for x in range(self.width):
-                cell: Cell = Cell(15, False, False)
+                cell: Cell = Cell(x=x, y=y)
                 row.append(cell)
             self.maze.append(row)
+        self.draw_fortytwo()
 
+    def draw_fortytwo(self) -> None:
         if self.width < 7 or self.heigth < 5:
             print("'Error: Maze size is too small for '42' pattern.")
             exit(0)
@@ -36,12 +37,12 @@ class MazeGenerator:
         offset_x: int = (self.width - 7) // 2
         offset_y: int = (self.heigth - 5) // 2
 
-        pattern_42: list[str] = [
-            "#..#..####",
-            "#..#.....#.",
-            "####....#..",
-            "...#...#...",
-            "...#..#####",
+        pattern_42: list[list[str]] = [
+            ["#..#..####"],
+            ["#..#.....#."],
+            ["####....#.."],
+            ["...#...#..."],
+            ["...#..#####"],
         ]
 
         for rel_y, row in enumerate(pattern_42):
@@ -59,3 +60,41 @@ class MazeGenerator:
                 self.maze[ty][tx].walls = 15
                 self.maze[ty][tx].static = True
                 self.maze[ty][tx].visited = True
+
+    def get_neighbours(self, cell: Cell, maze: Maze) -> list[Cell]:
+        neighbours: list[Cell] = []
+        if cell.y > 0:
+            neighbours.append(Cell(cell.y+1, cell.x))
+        if cell.y < maze.height - 1:
+            neighbours.append(Cell(cell.y-1, cell.x))
+        if cell.x > 0:
+            neighbours.append(Cell(cell.y, cell.x+1))
+        if cell.x < maze.width - 1:
+            neighbours.append(Cell(cell.y, cell.x-1))
+        return neighbours
+
+    NORTH = 1  # 0001
+    EAST = 2   # 0010
+    SOUTH = 4  # 0100
+    WEST = 8   # 1000
+    ALL = 15   # 1111
+
+    def remove_walls(self, cell_a: Cell, cell_b: Cell) -> None:
+        dx = cell_b.x - cell_a.x
+        dy = cell_b.y - cell_a.y
+
+        if dx == 1:
+            cell_a.walls &= ~self.EAST
+            cell_b.walls &= ~self.WEST
+
+        elif dx == -1:
+            cell_a.walls &= ~self.WEST
+            cell_b.walls &= ~self.EAST
+
+        elif dy == 1:
+            cell_a.walls &= ~self.SOUTH
+            cell_b.walls &= ~self.NORTH
+
+        elif dy == -1:
+            cell_a.walls &= ~self.NORTH
+            cell_b.walls &= ~self.SOUTH
