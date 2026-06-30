@@ -6,8 +6,8 @@ class Maze:
             self,
             width: int,
             height: int,
-            entry: dict[str, int],
-            exit: dict[str, int],
+            entry: Cell,
+            exit: Cell,
             grid: list[list[Cell]]) -> None:
         self.width = width
         self.height = height

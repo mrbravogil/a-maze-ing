@@ -1,4 +1,5 @@
 from . import Maze, Cell
+import random
 
 
 class MazeGenerator:
@@ -12,7 +13,7 @@ class MazeGenerator:
         self.width = maze_class.width
         self.height = maze_class.height
         self.animation = animation
-        self.maze = maze_class.grid
+        self.maze_grid = maze_class.grid
         self.seed = seed
         self.perfect = perfect
         self.entry = maze_class.entry
@@ -61,16 +62,24 @@ class MazeGenerator:
                 self.maze[ty][tx].static = True
                 self.maze[ty][tx].visited = True
 
-    def get_neighbours(self, cell: Cell, maze: Maze) -> list[Cell]:
+    def get_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            neighbours.append(Cell(cell.y+1, cell.x))
-        if cell.y < maze.height - 1:
-            neighbours.append(Cell(cell.y-1, cell.x))
+            up = self.maze_grid[cell.y+1][cell.x]
+            if not up.visited:
+                neighbours.append(up)
+        if cell.y < self.maze.height - 1:
+            down = self.maze_grid[cell.y-1][cell.x]
+            if not down.visited:
+                neighbours.append(down)
         if cell.x > 0:
-            neighbours.append(Cell(cell.y, cell.x+1))
-        if cell.x < maze.width - 1:
-            neighbours.append(Cell(cell.y, cell.x-1))
+            east = self.maze_grid[cell.y][cell.x+1]
+            if not east.visited:
+                neighbours.append(east)
+        if cell.x < self.maze.width - 1:
+            west = self.maze_grid[cell.y][cell.x-1]
+            if not west.visited:
+                neighbours.append(west)
         return neighbours
 
     NORTH = 1  # 0001
@@ -98,3 +107,48 @@ class MazeGenerator:
         elif dy == -1:
             cell_a.walls &= ~self.NORTH
             cell_b.walls &= ~self.SOUTH
+
+    def generate_maze_dfs(self):
+        start = self.entry
+        stack = []
+        stack.append(start)
+        start.visited = True
+
+        while len(stack) > 0:
+            current = stack[-1]
+            neighbours = self.get_neighbours(current)
+            if len(neighbours) > 0:
+                next = random.choice(neighbours)
+                self.remove_walls(current, next)
+                next.visited = True
+                stack.append(next)
+            else:
+                stack.pop()
+
+
+    def solve_maze_bfs(self):
+        queue = []
+        self.entry.visited = True
+        queue.append(self.entry)
+        parents = {}
+
+        while len(queue) > 0:
+            current = queue.pop(0)
+            if current == self.exit:
+                return self.reconstruct_path(parents)
+            neighbours = self.get_neighbours(current)
+            for n in neighbours:
+                if not n.visited:
+                    n.visited = True
+                    parents[n] = current
+                    queue.append(n)
+        return []
+    
+    def reconstruct_path(self, parents: dict[Cell, Cell]):
+        exit = self.exit
+        path = [exit]
+        current = exit
+        while current in parents:
+            path.append(current)
+        path.reverse()
+        return path
