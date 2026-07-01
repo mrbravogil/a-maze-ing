@@ -7,10 +7,9 @@ class Maze:
             width: int,
             height: int,
             entry: Cell,
-            exit: Cell,
-            grid: list[list[Cell]]) -> None:
+            exit: Cell) -> None:
         self.width = width
         self.height = height
         self.entry = entry
         self.exit = exit
-        self.grid = grid
+        self.grid: list[list[Cell]] = []
