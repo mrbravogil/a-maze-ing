@@ -1,4 +1,5 @@
 from . import Maze, Cell
+from collections import deque
 import random
 
 
@@ -132,16 +133,20 @@ class MazeGenerator:
         neighbours: list[Cell] = []
         if cell.y > 0:
             up = self.maze_grid[cell.y+1][cell.x]
-            neighbours.append(up)
+            if not getattr(up, "static", False):
+                neighbours.append(up)
         if cell.y < self.maze.height - 1:
             down = self.maze_grid[cell.y-1][cell.x]
-            neighbours.append(down)
+            if not getattr(down, "static", False):
+                neighbours.append(down)
         if cell.x > 0:
             east = self.maze_grid[cell.y][cell.x+1]
-            neighbours.append(east)
+            if not getattr(east, "static", False):
+                neighbours.append(east)
         if cell.x < self.maze.width - 1:
             west = self.maze_grid[cell.y][cell.x-1]
-            neighbours.append(west)
+            if not getattr(west, "static", False):
+                neighbours.append(west)
         return neighbours
         
 
@@ -149,19 +154,22 @@ class MazeGenerator:
         neighbours: list[Cell] = []
         if cell.y > 0:
             up = self.maze_grid[cell.y+1][cell.x]
-            if not up.visited:
+            if not up.visited and not getattr(up, "static", False):
                 neighbours.append(up)
+
         if cell.y < self.maze.height - 1:
             down = self.maze_grid[cell.y-1][cell.x]
-            if not down.visited:
+            if not down.visited and not getattr(down, "static", False):
                 neighbours.append(down)
+
         if cell.x > 0:
             east = self.maze_grid[cell.y][cell.x+1]
-            if not east.visited:
+            if not east.visited and not getattr(east, "static", False):
                 neighbours.append(east)
+
         if cell.x < self.maze.width - 1:
             west = self.maze_grid[cell.y][cell.x-1]
-            if not west.visited:
+            if not west.visited and not getattr(west, "static", False):
                 neighbours.append(west)
         return neighbours
     
@@ -169,19 +177,26 @@ class MazeGenerator:
         neighbours: list[Cell] = []
         if cell.y > 0:
             up = self.maze_grid[cell.y+1][cell.x]
-            if not up.visited and not self._has_wall_between(cell, up):
+            if (not up.visited and not self._has_wall_between(cell, up)
+                and not getattr(up, "static", False)):
                 neighbours.append(up)
+
         if cell.y < self.maze.height - 1:
             down = self.maze_grid[cell.y-1][cell.x]
-            if not down.visited and not self._has_wall_between(cell, down):
+            if (not down.visited and not self._has_wall_between(cell, down)
+                and not getattr(down, "static", False)):
                 neighbours.append(down)
+
         if cell.x > 0:
             east = self.maze_grid[cell.y][cell.x+1]
-            if not east.visited and not self._has_wall_between(cell, east):
+            if (not east.visited and not self._has_wall_between(cell, east)
+                and not getattr(east, "static", False)):
                 neighbours.append(east)
+
         if cell.x < self.maze.width - 1:
             west = self.maze_grid[cell.y][cell.x-1]
-            if not west.visited and not self._has_wall_between(cell, west):
+            if (not west.visited and not self._has_wall_between(cell, west)
+                and not getattr(west, "static", False)):
                 neighbours.append(west)
         return neighbours
 
@@ -271,13 +286,15 @@ class MazeGenerator:
 
 
     def solve_maze_bfs(self):
-        queue = []
+        self.reset_visited()
+        queue = deque([])
         self.entry.visited = True
         queue.append(self.entry)
         parents = {}
 
         while len(queue) > 0:
-            current = queue.pop(0)
+            # FIFO
+            current = queue.popleft()
             if current == self.exit:
                 return self.reconstruct_path(parents)
             neighbours = self.get_reachable_neighbours(current)
@@ -288,11 +305,33 @@ class MazeGenerator:
                     queue.append(n)
         return []
     
-    def reconstruct_path(self, parents: dict[Cell, Cell]):
+
+    def solve_maze_dfs(self):
+        self.reset_visited()
+
+        stack = deque([])
+        parents = {}
+        self.entry.visited = True
+        stack.append(self.entry)
+
+        while len(stack) > 0:
+            # LIFO
+            current = stack.pop()
+            if current == self.exit:
+                return self.reconstruct_path(parents)
+            neighbours = self.get_reachable_neighbours(current)
+            for n in neighbours:
+                n.visited = True
+                parents[n] = current
+                stack.append(n)
+        return []
+    
+    def reconstruct_path(self, parents: dict[Cell, Cell]) -> list[Cell]:
         exit = self.exit
-        path = [exit]
+        path: list[Cell] = [exit]
         current = exit
         while current in parents:
+            current = parents[current]
             path.append(current)
         path.reverse()
         return path
