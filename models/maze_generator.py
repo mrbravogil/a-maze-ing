@@ -34,10 +34,7 @@ class MazeGenerator:
             exit=exit,
         )
 
-        self.maze.grid = [
-            [Cell(x=x, y=y) for x in range(width)]
-            for y in range(height)
-        ]
+        self.maze.grid = self.maze_init()
 
         self.entry = self.maze.grid[entry_y][entry_x]
         self.entry.entrance = True
@@ -55,11 +52,15 @@ class MazeGenerator:
                 cell: Cell = Cell(x=x, y=y)
                 row.append(cell)
             self.maze.grid.append(row)
-        self.draw_fortytwo()
+        if self.width >= 7 or self.height >= 5:
+            self.draw_fortytwo()
+        else:
+            print("Maze size is too small for '42' pattern.")
 
+    
     def draw_fortytwo(self) -> None:
-        if self.width < 7 or self.heigth < 5:
-            print("'Error: Maze size is too small for '42' pattern.")
+        if self.width < 7 or self.height < 5:
+            print("Error: Maze size is too small for '42' pattern.")
             exit(0)
 
         offset_x: int = (self.width - 7) // 2
@@ -80,8 +81,8 @@ class MazeGenerator:
                 tx, ty = offset_x + rel_x, offset_y + rel_y
 
                 if (
-                    (self.entry['x'] == tx and self.entry['y'] == ty)
-                    or (self.entry['x'] == tx and self.entry['y'] == ty)
+                    (self.entry['x'] == tx and self.entry.y == ty)
+                    or (self.entry['x'] == tx and self.entry.x == ty)
                 ):
                     print('Entry & Exit must not be in 42 position.')
                     exit(0)
@@ -119,7 +120,7 @@ class MazeGenerator:
             ny = y
             nx = x - 1
         else:
-            raise Exception(f"{label} debe estar dentro del maze")
+            raise Exception(f"{label} must be within width/height")
 
         """ Checks if values are valid, if they're within height and width.
             Then removes inner walls.
@@ -132,19 +133,19 @@ class MazeGenerator:
     def get_all_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze_grid[cell.y+1][cell.x]
+            up = self.maze.grid[cell.y+1][cell.x]
             if not getattr(up, "static", False):
                 neighbours.append(up)
         if cell.y < self.maze.height - 1:
-            down = self.maze_grid[cell.y-1][cell.x]
+            down = self.maze.grid[cell.y-1][cell.x]
             if not getattr(down, "static", False):
                 neighbours.append(down)
         if cell.x > 0:
-            east = self.maze_grid[cell.y][cell.x+1]
+            east = self.maze.grid[cell.y][cell.x+1]
             if not getattr(east, "static", False):
                 neighbours.append(east)
         if cell.x < self.maze.width - 1:
-            west = self.maze_grid[cell.y][cell.x-1]
+            west = self.maze.grid[cell.y][cell.x-1]
             if not getattr(west, "static", False):
                 neighbours.append(west)
         return neighbours
@@ -153,17 +154,17 @@ class MazeGenerator:
     def get_unvisited_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze_grid[cell.y+1][cell.x]
+            up = self.maze.grid[cell.y+1][cell.x]
             if not up.visited and not getattr(up, "static", False):
                 neighbours.append(up)
 
         if cell.y < self.maze.height - 1:
-            down = self.maze_grid[cell.y-1][cell.x]
+            down = self.maze.grid[cell.y-1][cell.x]
             if not down.visited and not getattr(down, "static", False):
                 neighbours.append(down)
 
         if cell.x > 0:
-            east = self.maze_grid[cell.y][cell.x+1]
+            east = self.maze.grid[cell.y][cell.x+1]
             if not east.visited and not getattr(east, "static", False):
                 neighbours.append(east)
 
@@ -176,25 +177,25 @@ class MazeGenerator:
     def get_reachable_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze_grid[cell.y+1][cell.x]
+            up = self.maze.grid[cell.y+1][cell.x]
             if (not up.visited and not self._has_wall_between(cell, up)
                 and not getattr(up, "static", False)):
                 neighbours.append(up)
 
         if cell.y < self.maze.height - 1:
-            down = self.maze_grid[cell.y-1][cell.x]
+            down = self.maze.grid[cell.y-1][cell.x]
             if (not down.visited and not self._has_wall_between(cell, down)
                 and not getattr(down, "static", False)):
                 neighbours.append(down)
 
         if cell.x > 0:
-            east = self.maze_grid[cell.y][cell.x+1]
+            east = self.maze.grid[cell.y][cell.x+1]
             if (not east.visited and not self._has_wall_between(cell, east)
                 and not getattr(east, "static", False)):
                 neighbours.append(east)
 
         if cell.x < self.maze.width - 1:
-            west = self.maze_grid[cell.y][cell.x-1]
+            west = self.maze.grid[cell.y][cell.x-1]
             if (not west.visited and not self._has_wall_between(cell, west)
                 and not getattr(west, "static", False)):
                 neighbours.append(west)
@@ -251,7 +252,7 @@ class MazeGenerator:
         self._generate_maze_dfs()
 
         if self.perfect is False:
-            self.create_multiple_paths()
+            self._create_multiple_paths()
 
         return self.maze.grid
 
@@ -265,7 +266,7 @@ class MazeGenerator:
             current = stack[-1]
             neighbours = self.get_unvisited_neighbours(current)
             if len(neighbours) > 0:
-                next = random.choice(neighbours)
+                next = self.rng.choice(neighbours)
                 self.remove_walls(current, next)
                 next.visited = True
                 stack.append(next)
@@ -280,7 +281,7 @@ class MazeGenerator:
             neighbours = self.get_all_neighbours(cell)
             if not neighbours:
                 continue
-            nb = random.choice(neighbours)
+            nb = self.rng.choice(neighbours)
             if self._has_wall_between(cell, nb):
                 self.remove_walls(cell, nb)
 
@@ -335,6 +336,25 @@ class MazeGenerator:
             path.append(current)
         path.reverse()
         return path
+
+
+    def maze_to_str(self) -> dict:
+        data = {}
+        data["height"] = self.height
+        data["width"] = self.width
+        data["entry"] = {"x": self.entry.x, "y": self.entry.y}
+        data["exit"] = {"x": self.exit.x, "y": self.exit.y}
+        data["cells"] = []
+
+        for row in self.maze.grid:
+            row_str = []
+            for c in row:
+                row_str.append({
+                    "x": c.x, "y": c.y, "walls": c.walls,
+                    "static": c.static})
+            data["cells"].append(row_str)
+
+        return data
 
 
 
