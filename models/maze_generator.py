@@ -19,30 +19,28 @@ class MazeGenerator:
      ) -> None:
         self.width = width
         self.height = height
+        self.entry_x = entry_x
+        self.entry_y = entry_y
+        self.exit_x = exit_x
+        self.exit_y = exit_y
         self.perfect = perfect
         self.seed = seed
         self.animation = animation
         self.rng = random.Random(seed)
 
-        entry = Cell(x=entry_x, y=entry_y, entrance=True)
-        exit = Cell(x=exit_x, y=exit_y, exit=True)
+        self._validate_dimensions()
+        self._validate_entry_exit()
 
         self.maze = Maze(
             width=width,
             height=height,
-            entry=entry,
-            exit=exit,
+            entry=None,
+            exit=None,
         )
 
-        self.maze.grid = self.maze_init()
-
-        self.entry = self.maze.grid[entry_y][entry_x]
-        self.entry.entrance = True
-
-        self.exit = self.maze.grid[exit_y][exit_x]
-        self.exit.exit = True
-
         self.solutions: list[list[Cell]] = []
+        entry = Cell | None = None
+        exit = Cell | None = None
        
 
     def maze_init(self) -> None:
@@ -52,43 +50,65 @@ class MazeGenerator:
                 cell: Cell = Cell(x=x, y=y)
                 row.append(cell)
             self.maze.grid.append(row)
-        if self.width >= 7 or self.height >= 5:
-            self.draw_fortytwo()
-        else:
-            print("Maze size is too small for '42' pattern.")
+        self._validate_entry_exit()
+        self.draw_fortytwo()
+        self.entry = self.maze.grid[self.entry_y][self.entry_x]
+        self.exit = self.maze.grid[self.exit_y][self.exit_x]
+        self.entry.entrance = True
+        self.exit.exit = True
 
     
     def draw_fortytwo(self) -> None:
         if self.width < 7 or self.height < 5:
-            print("Error: Maze size is too small for '42' pattern.")
-            exit(0)
+            raise ValueError("Error: Maze size is too small for '42' pattern.")
 
         offset_x: int = (self.width - 7) // 2
-        offset_y: int = (self.heigth - 5) // 2
+        offset_y: int = (self.height - 5) // 2
 
-        pattern_42: list[list[str]] = [
-            ["#..#..####"],
-            ["#..#.....#."],
-            ["####....#.."],
-            ["...#...#..."],
-            ["...#..#####"],
+        # pattern_42: list[str] = [
+        #     "#..#..####",
+        #     "#..#.....#.",
+        #     "####....#..",
+        #     "...#...#...",
+        #     "...#..#####",
+        # ]
+
+        pattern_42: list[str] = [
+            "#######",
+            "...#..#",
+            "#######",
+            "#.....#",
+            "#######",
         ]
 
         for rel_y, row in enumerate(pattern_42):
             for rel_x, char in enumerate(row):
                 if char != '#':
                     continue
+
                 tx, ty = offset_x + rel_x, offset_y + rel_y
 
                 if (
-                    (self.entry['x'] == tx and self.entry.y == ty)
-                    or (self.entry['x'] == tx and self.entry.x == ty)
+                    (self.entry.x == tx and self.entry.y == ty)
+                    or (self.exit.x == tx and self.exit.y == ty)
                 ):
-                    print('Entry & Exit must not be in 42 position.')
-                    exit(0)
+                    raise ValueError('Entry & Exit must not be in 42 position.')
                 self.maze.grid[ty][tx].walls = 15
                 self.maze.grid[ty][tx].static = True
                 self.maze.grid[ty][tx].visited = True
+
+    def _validate_dimensions(self) -> None:
+        if self.width <= 0 or self.height <= 0:
+            raise ValueError("Maze dimensions must be positive.")
+        
+    
+    def _validate_entry_exit(self) -> None:
+        if not (0 <= self.entry_x < self.width and 0 <= self.entry_y < self.height):
+            raise ValueError("Entry is out of bounds.")
+        if not (0 <= self.exit_x < self.width and 0 <= self.exit_y < self.height):
+            raise ValueError("Exit is out of bounds.")
+        if self.entry_x == self.exit_x and self.entry_y == self.exit_y:
+            raise ValueError("Entry and exit must be different.")
 
 
     def reset_visited(self) -> None:
