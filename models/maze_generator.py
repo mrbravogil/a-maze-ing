@@ -38,24 +38,28 @@ class MazeGenerator:
             exit=None,
         )
 
+        self.entry: Cell | None = None
+        self.exit: Cell | None = None
         self.solutions: list[list[Cell]] = []
-        entry = Cell | None = None
-        exit = Cell | None = None
        
 
     def maze_init(self) -> None:
+        self.maze.grid = []
         for y in range(self.height):
             row: list[Cell] = []
             for x in range(self.width):
                 cell: Cell = Cell(x=x, y=y)
                 row.append(cell)
             self.maze.grid.append(row)
-        self._validate_entry_exit()
-        self.draw_fortytwo()
         self.entry = self.maze.grid[self.entry_y][self.entry_x]
         self.exit = self.maze.grid[self.exit_y][self.exit_x]
+        if self.entry is None or self.exit is None:
+            raise ValueError("Error: Entry and Exit cannot be None.")
         self.entry.entrance = True
         self.exit.exit = True
+        self._validate_entry_exit()
+        self.draw_fortytwo()
+        
 
     
     def draw_fortytwo(self) -> None:
@@ -97,9 +101,9 @@ class MazeGenerator:
                 self.maze.grid[ty][tx].static = True
                 self.maze.grid[ty][tx].visited = True
 
-    def _validate_dimensions(self) -> None:
-        if self.width <= 0 or self.height <= 0:
-            raise ValueError("Maze dimensions must be positive.")
+    # def _validate_dimensions(self) -> None:
+    #     if self.width <= 0 or self.height <= 0:
+    #         raise ValueError("Maze dimensions must be positive.")
         
     
     def _validate_entry_exit(self) -> None:
@@ -189,7 +193,7 @@ class MazeGenerator:
                 neighbours.append(east)
 
         if cell.x < self.maze.width - 1:
-            west = self.maze_grid[cell.y][cell.x-1]
+            west = self.maze.grid[cell.y][cell.x-1]
             if not west.visited and not getattr(west, "static", False):
                 neighbours.append(west)
         return neighbours
@@ -295,8 +299,8 @@ class MazeGenerator:
 
     def _create_multiple_paths(self) -> None:
         for _ in range(15):
-            y: int = random.randint(0, self.height - 1)
-            x: int = random.randint(0, self.width - 1)
+            y: int = self.rng(0, self.height - 1)
+            x: int = self.rng(0, self.width - 1)
             cell = self.maze.grid[y][x]
             neighbours = self.get_all_neighbours(cell)
             if not neighbours:
@@ -348,9 +352,8 @@ class MazeGenerator:
         return []
     
     def reconstruct_path(self, parents: dict[Cell, Cell]) -> list[Cell]:
-        exit = self.exit
-        path: list[Cell] = [exit]
-        current = exit
+        path: list[Cell] = [self.exit]
+        current = self.exit
         while current in parents:
             current = parents[current]
             path.append(current)
