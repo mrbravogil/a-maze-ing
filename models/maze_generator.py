@@ -157,21 +157,21 @@ class MazeGenerator:
     def get_all_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze.grid[cell.y+1][cell.x]
+            up = self.maze.grid[cell.y-1][cell.x]
             if not getattr(up, "static", False):
                 neighbours.append(up)
         if cell.y < self.maze.height - 1:
-            down = self.maze.grid[cell.y-1][cell.x]
+            down = self.maze.grid[cell.y+1][cell.x]
             if not getattr(down, "static", False):
                 neighbours.append(down)
         if cell.x > 0:
-            east = self.maze.grid[cell.y][cell.x+1]
-            if not getattr(east, "static", False):
-                neighbours.append(east)
-        if cell.x < self.maze.width - 1:
-            west = self.maze.grid[cell.y][cell.x-1]
+            west = self.maze.grid[cell.y][cell.x - 1]
             if not getattr(west, "static", False):
                 neighbours.append(west)
+        if cell.x < self.maze.width - 1:
+            east = self.maze.grid[cell.y][cell.x + 1]
+            if not getattr(east, "static", False):
+                neighbours.append(east)
         return neighbours
         
 
@@ -188,41 +188,41 @@ class MazeGenerator:
                 neighbours.append(down)
 
         if cell.x > 0:
-            east = self.maze.grid[cell.y][cell.x+1]
-            if not east.visited and not getattr(east, "static", False):
-                neighbours.append(east)
-
-        if cell.x < self.maze.width - 1:
-            west = self.maze.grid[cell.y][cell.x-1]
+            west = self.maze.grid[cell.y][cell.x - 1]
             if not west.visited and not getattr(west, "static", False):
                 neighbours.append(west)
+
+        if cell.x < self.maze.width - 1:
+            east = self.maze.grid[cell.y][cell.x + 1]
+            if not east.visited and not getattr(east, "static", False):
+                neighbours.append(east)
         return neighbours
     
     def get_reachable_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze.grid[cell.y+1][cell.x]
+            up = self.maze.grid[cell.y + 1][cell.x]
             if (not up.visited and not self._has_wall_between(cell, up)
                 and not getattr(up, "static", False)):
                 neighbours.append(up)
 
         if cell.y < self.maze.height - 1:
-            down = self.maze.grid[cell.y-1][cell.x]
+            down = self.maze.grid[cell.y - 1][cell.x]
             if (not down.visited and not self._has_wall_between(cell, down)
                 and not getattr(down, "static", False)):
                 neighbours.append(down)
 
         if cell.x > 0:
-            east = self.maze.grid[cell.y][cell.x+1]
-            if (not east.visited and not self._has_wall_between(cell, east)
-                and not getattr(east, "static", False)):
-                neighbours.append(east)
-
-        if cell.x < self.maze.width - 1:
-            west = self.maze.grid[cell.y][cell.x-1]
+            west = self.maze.grid[cell.y][cell.x - 1]
             if (not west.visited and not self._has_wall_between(cell, west)
                 and not getattr(west, "static", False)):
                 neighbours.append(west)
+
+        if cell.x < self.maze.width - 1:
+            east = self.maze.grid[cell.y][cell.x + 1]
+            if (not east.visited and not self._has_wall_between(cell, east)
+                and not getattr(east, "static", False)):
+                neighbours.append(east)
         return neighbours
 
     NORTH = 1  # 0001
