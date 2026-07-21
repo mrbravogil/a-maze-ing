@@ -1,3 +1,4 @@
+from typing import Optional
 from .cell import Cell
 
 
@@ -6,15 +7,14 @@ class Maze:
             self,
             width: int,
             height: int,
-            entry: Cell,
-            exit: Cell) -> None:
+            entry: Optional[Cell] = None,
+            exit: Optional[Cell] = None) -> None:
         self.width = width
         self.height = height
-        self.entry = entry
-        self.exit = exit
+        self.entry: Optional[Cell] = entry
+        self.exit: Optional[Cell] = exit
         self.grid: list[list[Cell]] = []
 
-    
     # def generate(self, maze_gen: MazeGenerator) -> Maze:
     #     maze_gen.maze_init()
     #     maze_gen.carve_entrance_exit()
@@ -22,7 +22,7 @@ class Maze:
     #     maze_gen.reset_visited()
     #     self.maze.grid = maze_gen.maze.grid
     #     return self.maze
-    
+
     # def solve(self, maze_gen: MazeGenerator, algorithm: bool):
     #     maze_gen.reset_visited()
     #     if algorithm == "bfs":
@@ -31,4 +31,3 @@ class Maze:
     #         maze_gen.solve_maze_dfs()
     #     else:
     #         raise Exception("Unknown algorithm")
-        

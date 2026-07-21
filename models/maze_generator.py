@@ -1,4 +1,5 @@
 from . import Maze, Cell
+from typing import Any
 from collections import deque
 import random
 
@@ -28,20 +29,20 @@ class MazeGenerator:
         self.animation = animation
         self.rng = random.Random(seed)
 
-        self._validate_dimensions()
+        # self._validate_dimensions()
         self._validate_entry_exit()
+
+        self.entry: Cell | None = None
+        self.exit: Cell | None = None
 
         self.maze = Maze(
             width=width,
             height=height,
-            entry=None,
-            exit=None,
+            entry=self.entry,
+            exit=self.exit,
         )
 
-        self.entry: Cell | None = None
-        self.exit: Cell | None = None
         self.solutions: list[list[Cell]] = []
-       
 
     def maze_init(self) -> None:
         self.maze.grid = []
@@ -59,10 +60,12 @@ class MazeGenerator:
         self.exit.exit = True
         self._validate_entry_exit()
         self.draw_fortytwo()
-        
 
-    
     def draw_fortytwo(self) -> None:
+        if self.entry is None or self.exit is None:
+            raise ValueError("Entry/exit must be "
+                             "initialized before draw_fortytwo().")
+
         if self.width < 7 or self.height < 5:
             raise ValueError("Error: Maze size is too small for '42' pattern.")
 
@@ -93,10 +96,13 @@ class MazeGenerator:
                 tx, ty = offset_x + rel_x, offset_y + rel_y
 
                 if (
-                    (self.entry.x == tx and self.entry.y == ty)
-                    or (self.exit.x == tx and self.exit.y == ty)
+                    (self.entry.x == tx
+                     and self.entry.y == ty)
+                    or (self.exit.x == tx
+                        and self.exit.y == ty)
                 ):
-                    raise ValueError('Entry & Exit must not be in 42 position.')
+                    raise ValueError('Entry & Exit '
+                                     'must not be in 42 position.')
                 self.maze.grid[ty][tx].walls = 15
                 self.maze.grid[ty][tx].static = True
                 self.maze.grid[ty][tx].visited = True
@@ -104,16 +110,17 @@ class MazeGenerator:
     # def _validate_dimensions(self) -> None:
     #     if self.width <= 0 or self.height <= 0:
     #         raise ValueError("Maze dimensions must be positive.")
-        
-    
-    def _validate_entry_exit(self) -> None:
-        if not (0 <= self.entry_x < self.width and 0 <= self.entry_y < self.height):
-            raise ValueError("Entry is out of bounds.")
-        if not (0 <= self.exit_x < self.width and 0 <= self.exit_y < self.height):
-            raise ValueError("Exit is out of bounds.")
-        if self.entry_x == self.exit_x and self.entry_y == self.exit_y:
-            raise ValueError("Entry and exit must be different.")
 
+    def _validate_entry_exit(self) -> None:
+        if not (0 <= self.entry_x < self.width
+                and 0 <= self.entry_y < self.height):
+            raise ValueError("Entry is out of bounds.")
+        if not (0 <= self.exit_x < self.width
+                and 0 <= self.exit_y < self.height):
+            raise ValueError("Exit is out of bounds.")
+        if (self.entry_x == self.exit_x
+                and self.entry_y == self.exit_y):
+            raise ValueError("Entry and exit must be different.")
 
     def reset_visited(self) -> None:
         for row in self.maze.grid:
@@ -121,11 +128,9 @@ class MazeGenerator:
                 if not getattr(cell, "static", False):
                     cell.visited = False
 
-
     def carve_entrance_exit(self):
         self.do_carve(self.entry, "Entry")
         self.do_carve(self.exit, "Exit")
- 
 
     def do_carve(self, cell: Cell, label: str = "cell"):
         x, y = cell.x, cell.y
@@ -153,7 +158,6 @@ class MazeGenerator:
             n_cell = self.maze.grid[ny][nx]
             self.remove_walls(original_cell, n_cell)
 
-
     def get_all_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
@@ -173,7 +177,6 @@ class MazeGenerator:
             if not getattr(east, "static", False):
                 neighbours.append(east)
         return neighbours
-        
 
     def get_unvisited_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
@@ -197,31 +200,31 @@ class MazeGenerator:
             if not east.visited and not getattr(east, "static", False):
                 neighbours.append(east)
         return neighbours
-    
+
     def get_reachable_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
             up = self.maze.grid[cell.y + 1][cell.x]
             if (not up.visited and not self._has_wall_between(cell, up)
-                and not getattr(up, "static", False)):
+                    and not getattr(up, "static", False)):
                 neighbours.append(up)
 
         if cell.y < self.maze.height - 1:
             down = self.maze.grid[cell.y - 1][cell.x]
             if (not down.visited and not self._has_wall_between(cell, down)
-                and not getattr(down, "static", False)):
+                    and not getattr(down, "static", False)):
                 neighbours.append(down)
 
         if cell.x > 0:
             west = self.maze.grid[cell.y][cell.x - 1]
             if (not west.visited and not self._has_wall_between(cell, west)
-                and not getattr(west, "static", False)):
+                    and not getattr(west, "static", False)):
                 neighbours.append(west)
 
         if cell.x < self.maze.width - 1:
             east = self.maze.grid[cell.y][cell.x + 1]
             if (not east.visited and not self._has_wall_between(cell, east)
-                and not getattr(east, "static", False)):
+                    and not getattr(east, "static", False)):
                 neighbours.append(east)
         return neighbours
 
@@ -246,10 +249,8 @@ class MazeGenerator:
 
         elif dy == -1:
             return (cell_a.walls & self.NORTH) != 0
-        
+
         raise ValueError("Cells are not neighbours")
-
-
 
     def remove_walls(self, cell_a: Cell, cell_b: Cell) -> None:
         dx = cell_b.x - cell_a.x
@@ -271,7 +272,6 @@ class MazeGenerator:
             cell_a.walls &= ~self.NORTH
             cell_b.walls &= ~self.SOUTH
 
-
     def dfs_generate(self) -> list[list[Cell]]:
         self._generate_maze_dfs()
 
@@ -281,6 +281,9 @@ class MazeGenerator:
         return self.maze.grid
 
     def _generate_maze_dfs(self) -> None:
+        if self.entry is None:
+            raise ValueError("Error: self.entry must be inicialized"
+                             " before generating the maze.")
         start = self.entry
         stack = []
         stack.append(start)
@@ -299,8 +302,8 @@ class MazeGenerator:
 
     def _create_multiple_paths(self) -> None:
         for _ in range(15):
-            y: int = self.rng(0, self.height - 1)
-            x: int = self.rng(0, self.width - 1)
+            y: int = self.rng.randint(0, self.height - 1)
+            x: int = self.rng.randint(0, self.width - 1)
             cell = self.maze.grid[y][x]
             neighbours = self.get_all_neighbours(cell)
             if not neighbours:
@@ -308,7 +311,6 @@ class MazeGenerator:
             nb = self.rng.choice(neighbours)
             if self._has_wall_between(cell, nb):
                 self.remove_walls(cell, nb)
-
 
     def solve_maze_bfs(self):
         self.reset_visited()
@@ -329,7 +331,6 @@ class MazeGenerator:
                     parents[n] = current
                     queue.append(n)
         return []
-    
 
     def solve_maze_dfs(self):
         self.reset_visited()
@@ -350,8 +351,11 @@ class MazeGenerator:
                 parents[n] = current
                 stack.append(n)
         return []
-    
+
     def reconstruct_path(self, parents: dict[Cell, Cell]) -> list[Cell]:
+        if self.exit is None:
+            raise ValueError("Error: self.exit must be inicialized before"
+                             "reconstructing the path.")
         path: list[Cell] = [self.exit]
         current = self.exit
         while current in parents:
@@ -360,9 +364,12 @@ class MazeGenerator:
         path.reverse()
         return path
 
-
     def maze_to_str(self) -> dict:
-        data = {}
+        if ((self.entry, self.exit) == (None, None)
+                or self.entry is None or self.exit is None):
+            raise ValueError("Error: self.entry and self.exit must"
+                             "be inicialized before executing maze to str")
+        data: dict[str, Any] = {}
         data["height"] = self.height
         data["width"] = self.width
         data["entry"] = {"x": self.entry.x, "y": self.entry.y}
@@ -378,9 +385,3 @@ class MazeGenerator:
             data["cells"].append(row_str)
 
         return data
-
-
-
-
-            
-
