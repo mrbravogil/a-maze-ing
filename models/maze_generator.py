@@ -274,9 +274,11 @@ class MazeGenerator:
 
     def dfs_generate(self) -> list[list[Cell]]:
         self._generate_maze_dfs()
+        self._connectivity()
 
-        if self.perfect is False:
-            self._create_multiple_paths()
+        if not self.perfect:
+            while not self._two_paths():
+                self._create_multiple_paths()
 
         return self.maze.grid
 
@@ -312,18 +314,83 @@ class MazeGenerator:
             if self._has_wall_between(cell, nb):
                 self.remove_walls(cell, nb)
 
-    def solve_maze_bfs(self):
+    def _two_paths(self) -> bool:
+        if self.entry is None:
+            raise ValueError("Error: self.entry must"
+                             "be inicialized before two paths")
+        first_path: list[Cell] = self.solve_maze_dfs(self.entry)
+        if first_path:
+            for cell in first_path:
+                second_path: list[Cell] = self.solve_maze_dfs(cell)
+                if second_path:
+                    return True
+
+        return False
+
+    def _connectivity(self) -> None:
+        if self.entry is None or self.exit is None:
+            raise ValueError("Error: self.entry and self.exit must"
+                             "be inicialized before connectivity")
+        main_path = self._flood_maze(self.entry)
+
+        while self._transit_cell(main_path) is True:
+            start: Cell | None = self._first_transit_cell(main_path)
+            if start is not None:
+                next_component = self._flood_maze(start)
+                wall_found: bool = False
+
+                for cell_a in next_component:
+                    for cell_b in self.get_all_neighbours(cell_a):
+                        if cell_b in main_path:
+                            self.remove_walls(cell_a, cell_b)
+                            wall_found = True
+                        if wall_found:
+                            break
+
+    def _transit_cell(self, main_path: list[Cell]) -> bool:
+        for row in self.maze.grid:
+            for cell in row:
+                if cell.static is not True and cell not in main_path:
+                    return True
+        return False
+
+    def _first_transit_cell(self, main_path: list[Cell]) -> Cell | None:
+
+        for row in self.maze.grid:
+            for cell in row:
+                if cell.static is not True and cell not in main_path:
+                    return cell
+        return None
+
+    def _flood_maze(self, start: Cell) -> list[Cell]:
         self.reset_visited()
-        queue = deque([])
-        self.entry.visited = True
-        queue.append(self.entry)
-        parents = {}
+        queue = deque([start])
+        start.visited = True
+        path: list[Cell] = []
 
         while len(queue) > 0:
-            # FIFO
+            current = queue.popleft()
+            path.append(current)
+            neighbours = self.get_reachable_neighbours(current)
+            for n in neighbours:
+                if not n.visited:
+                    n.visited = True
+                    queue.append(n)
+        return path
+
+    def solve_maze_bfs(self) -> list[Cell]:
+        if self.entry is None or self.exit is None:
+            raise ValueError("Error: self.entry and self.exit must"
+                             "be inicialized before solve bfs")
+        self.reset_visited()
+        queue = deque([self.entry])
+        self.entry.visited = True
+        parents: dict[Cell, Cell] = {}
+
+        while len(queue) > 0:
             current = queue.popleft()
             if current == self.exit:
-                return self.reconstruct_path(parents)
+                return self.reconstruct_path(self.exit, parents)
             neighbours = self.get_reachable_neighbours(current)
             for n in neighbours:
                 if not n.visited:
@@ -332,19 +399,18 @@ class MazeGenerator:
                     queue.append(n)
         return []
 
-    def solve_maze_dfs(self):
+    def solve_maze_dfs(self, start: Cell) -> list[Cell]:
         self.reset_visited()
 
-        stack = deque([])
-        parents = {}
-        self.entry.visited = True
-        stack.append(self.entry)
+        stack = deque([start])
+        parents: dict[Cell, Cell] = {}
+        start.visited = True
 
         while len(stack) > 0:
             # LIFO
             current = stack.pop()
             if current == self.exit:
-                return self.reconstruct_path(parents)
+                return self.reconstruct_path(self.exit, parents)
             neighbours = self.get_reachable_neighbours(current)
             for n in neighbours:
                 n.visited = True
@@ -352,12 +418,14 @@ class MazeGenerator:
                 stack.append(n)
         return []
 
-    def reconstruct_path(self, parents: dict[Cell, Cell]) -> list[Cell]:
-        if self.exit is None:
+    def reconstruct_path(self,
+                         end: Cell,
+                         parents: dict[Cell, Cell]) -> list[Cell]:
+        if end is None:
             raise ValueError("Error: self.exit must be inicialized before"
                              "reconstructing the path.")
-        path: list[Cell] = [self.exit]
-        current = self.exit
+        path: list[Cell] = [end]
+        current = end
         while current in parents:
             current = parents[current]
             path.append(current)
