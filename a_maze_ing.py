@@ -98,7 +98,7 @@ class MazeApp:
         self.generator.dfs_generate()
 
         if not self.config.perfect:
-            self.generator.create_multiple_paths()
+            self.generator._create_multiple_paths()
 
         self.generator.reset_visited()
         self.solution = self.generator.solve_maze_bfs()
