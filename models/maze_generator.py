@@ -66,11 +66,11 @@ class MazeGenerator:
             raise ValueError("Entry/exit must be "
                              "initialized before draw_fortytwo().")
 
-        if self.width < 7 or self.height < 5:
+        if self.width < 9 or self.height < 6:
             raise ValueError("Error: Maze size is too small for '42' pattern.")
 
-        offset_x: int = (self.width - 7) // 2
-        offset_y: int = (self.height - 5) // 2
+        offset_x: int = (self.width - 9) // 2
+        offset_y: int = max(1, (self.height - 6) // 2)
 
         # pattern_42: list[str] = [
         #     "#..#..####",
@@ -81,11 +81,12 @@ class MazeGenerator:
         # ]
 
         pattern_42: list[str] = [
-            "#######",
-            "...#..#",
-            "#######",
-            "#.....#",
-            "#######",
+            ".#...###.",
+            ".#.....#.",
+            ".#.....#.",
+            ".###.###.",
+            "...#.#...",
+            "...#.###.",
         ]
 
         for rel_y, row in enumerate(pattern_42):
@@ -181,12 +182,12 @@ class MazeGenerator:
     def get_unvisited_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze.grid[cell.y+1][cell.x]
+            up = self.maze.grid[cell.y-1][cell.x]
             if not up.visited and not getattr(up, "static", False):
                 neighbours.append(up)
 
         if cell.y < self.maze.height - 1:
-            down = self.maze.grid[cell.y-1][cell.x]
+            down = self.maze.grid[cell.y+1][cell.x]
             if not down.visited and not getattr(down, "static", False):
                 neighbours.append(down)
 
@@ -204,13 +205,13 @@ class MazeGenerator:
     def get_reachable_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
         if cell.y > 0:
-            up = self.maze.grid[cell.y + 1][cell.x]
+            up = self.maze.grid[cell.y - 1][cell.x]
             if (not up.visited and not self._has_wall_between(cell, up)
                     and not getattr(up, "static", False)):
                 neighbours.append(up)
 
         if cell.y < self.maze.height - 1:
-            down = self.maze.grid[cell.y - 1][cell.x]
+            down = self.maze.grid[cell.y + 1][cell.x]
             if (not down.visited and not self._has_wall_between(cell, down)
                     and not getattr(down, "static", False)):
                 neighbours.append(down)
@@ -346,6 +347,13 @@ class MazeGenerator:
                             wall_found = True
                         if wall_found:
                             break
+                    if wall_found:
+                        break
+
+                # Sin esto entra en bucle infinito
+                if not wall_found:
+                    break
+                main_path = self._flood_maze(self.entry)
 
     def _transit_cell(self, main_path: list[Cell]) -> bool:
         for row in self.maze.grid:
