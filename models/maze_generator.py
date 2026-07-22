@@ -229,10 +229,10 @@ class MazeGenerator:
                 neighbours.append(east)
         return neighbours
 
-    NORTH = 1  # 0001
-    EAST = 2   # 0010
-    SOUTH = 4  # 0100
-    WEST = 8   # 1000
+    NORTH = 1  # 001
+    EAST = 2   # 010
+    SOUTH = 4  # 010
+    WEST = 8   # 100
     ALL = 15   # 1111
 
     def _has_wall_between(self, cell_a: Cell, cell_b: Cell) -> bool:
@@ -273,6 +273,26 @@ class MazeGenerator:
             cell_a.walls &= ~self.NORTH
             cell_b.walls &= ~self.SOUTH
 
+    def build_walls(self, cell_a: Cell, cell_b: Cell) -> None:
+            dx = cell_b.x - cell_a.x
+            dy = cell_b.y - cell_a.y
+    
+            if dx == 1:
+                cell_a.walls |= ~self.EAST
+                cell_b.walls |= ~self.WEST
+    
+            elif dx == -1:
+                cell_a.walls |= ~self.WEST
+                cell_b.walls |= ~self.EAST
+    
+            elif dy == 1:
+                cell_a.walls |= ~self.SOUTH
+                cell_b.walls |= ~self.NORTH
+    
+            elif dy == -1:
+                cell_a.walls |= ~self.NORTH
+                cell_b.walls |= ~self.SOUTH
+
     def dfs_generate(self) -> list[list[Cell]]:
         self._generate_maze_dfs()
         self._connectivity()
@@ -280,6 +300,7 @@ class MazeGenerator:
         if not self.perfect:
             while not self._two_paths():
                 self._create_multiple_paths()
+            self._pacman_check()
 
         return self.maze.grid
 
@@ -298,6 +319,8 @@ class MazeGenerator:
             if len(neighbours) > 0:
                 next = self.rng.choice(neighbours)
                 self.remove_walls(current, next)
+                if self._check_3x3():
+                    self.build_walls(current, next)
                 next.visited = True
                 stack.append(next)
             else:
@@ -314,6 +337,8 @@ class MazeGenerator:
             nb = self.rng.choice(neighbours)
             if self._has_wall_between(cell, nb):
                 self.remove_walls(cell, nb)
+                if self._check_3x3():
+                    self.build_walls(cell, nb)
 
     def _two_paths(self) -> bool:
         if self.entry is None:
@@ -344,6 +369,8 @@ class MazeGenerator:
                     for cell_b in self.get_all_neighbours(cell_a):
                         if cell_b in main_path:
                             self.remove_walls(cell_a, cell_b)
+                            if self._check_3x3():
+                                self.build_walls(cell_a, cell_b)
                             wall_found = True
                         if wall_found:
                             break
@@ -383,18 +410,59 @@ class MazeGenerator:
                     queue.append(n)
         return path
 
-    def _pacman_check(self) -> bool:
-        top_right: Cell = Cell(x=0, y=0)
-        top_left: Cell = Cell(x=self.width-1, y=0)
-        bottom_right: Cell = Cell(x=0, y=self.height-1)
-        bottom_left: Cell = Cell(x=self.width-1, y=self.height-1)
-        center: Cell = Cell(x=self.width//2, y=self.height//2)
+    def _pacman_check(self) -> None:
+        top_right: Cell = self.maze.grid[0][0]
+        top_left: Cell = self.maze.grid[0][self.width-1]
+        bottom_right: Cell = self.maze.grid[self.height-1][0]
+        bottom_left: Cell = self.maze.grid[self.height-1][self.width-1]
+        center: Cell = self.maze.grid[self.height//2][self.width//2]
 
         check_list: list[Cell] = [top_right, top_left, bottom_right, bottom_left, center]
         for c in check_list:
-            path: list[Cell] = self.solve_maze_bfs(self.entry, c)
-            if not path:
-                
+            while not self.solve_maze_bfs(self.entry, c):
+                open: bool = False
+                neighbours = self.get_all_neighbours(c)
+                for n in neighbours:
+                    if self.solve_maze_bfs(self.entry, n):
+                        self.remove_walls(n, c)
+                        if self._check_3x3():
+                            self.build_walls(n, c)
+                        else:
+                            open = True
+                            break
+                if not open:
+                    break
+
+    def _check_3x3(self) -> bool:
+        for y in range(self.height - 2):
+            for x in range(self.width - 2):
+                c0 = self.maze.grid[y][x]
+                c1 = self.maze.grid[y][x + 1]
+                c2 = self.maze.grid[y][x + 2]
+                c3 = self.maze.grid[y + 1][x]
+                c4 = self.maze.grid[y + 1][x + 1]
+                c5 = self.maze.grid[y + 1][x + 2]
+                c6 = self.maze.grid[y + 2][x]
+                c7 = self.maze.grid[y + 2][x + 1]
+                c8 = self.maze.grid[y + 2][x + 2]
+
+                if (
+                    not self._has_wall_between(c0, c1) and
+                    not self._has_wall_between(c1, c2) and
+                    not self._has_wall_between(c3, c4) and
+                    not self._has_wall_between(c4, c5) and
+                    not self._has_wall_between(c6, c7) and
+                    not self._has_wall_between(c7, c8) and
+                    not self._has_wall_between(c0, c3) and
+                    not self._has_wall_between(c3, c6) and
+                    not self._has_wall_between(c1, c4) and
+                    not self._has_wall_between(c4, c7) and
+                    not self._has_wall_between(c2, c5) and
+                    not self._has_wall_between(c5, c8)
+                ):
+                    return True
+
+        return False
 
     def solve_maze_bfs(self, start: Cell, end: Cell) -> list[Cell]:
         if start is None or end is None:
