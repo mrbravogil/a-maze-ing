@@ -298,9 +298,9 @@ class MazeGenerator:
         self._connectivity()
 
         if not self.perfect:
+            self._pacman_check()
             while not self._two_paths():
                 self._create_multiple_paths()
-            self._pacman_check()
 
         return self.maze.grid
 
