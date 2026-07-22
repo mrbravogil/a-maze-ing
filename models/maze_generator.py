@@ -349,8 +349,6 @@ class MazeGenerator:
                             break
                     if wall_found:
                         break
-
-                # Sin esto entra en bucle infinito
                 if not wall_found:
                     break
                 main_path = self._flood_maze(self.entry)
@@ -363,7 +361,6 @@ class MazeGenerator:
         return False
 
     def _first_transit_cell(self, main_path: list[Cell]) -> Cell | None:
-
         for row in self.maze.grid:
             for cell in row:
                 if cell.static is not True and cell not in main_path:
@@ -386,19 +383,32 @@ class MazeGenerator:
                     queue.append(n)
         return path
 
-    def solve_maze_bfs(self) -> list[Cell]:
-        if self.entry is None or self.exit is None:
+    def _pacman_check(self) -> bool:
+        top_right: Cell = Cell(x=0, y=0)
+        top_left: Cell = Cell(x=self.width-1, y=0)
+        bottom_right: Cell = Cell(x=0, y=self.height-1)
+        bottom_left: Cell = Cell(x=self.width-1, y=self.height-1)
+        center: Cell = Cell(x=self.width//2, y=self.height//2)
+
+        check_list: list[Cell] = [top_right, top_left, bottom_right, bottom_left, center]
+        for c in check_list:
+            path: list[Cell] = self.solve_maze_bfs(self.entry, c)
+            if not path:
+                
+
+    def solve_maze_bfs(self, start: Cell, end: Cell) -> list[Cell]:
+        if start is None or end is None:
             raise ValueError("Error: self.entry and self.exit must"
                              "be inicialized before solve bfs")
         self.reset_visited()
-        queue = deque([self.entry])
-        self.entry.visited = True
+        queue = deque([start])
+        start.visited = True
         parents: dict[Cell, Cell] = {}
 
         while len(queue) > 0:
             current = queue.popleft()
-            if current == self.exit:
-                return self.reconstruct_path(self.exit, parents)
+            if current == end:
+                return self.reconstruct_path(end, parents)
             neighbours = self.get_reachable_neighbours(current)
             for n in neighbours:
                 if not n.visited:
