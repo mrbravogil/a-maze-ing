@@ -286,11 +286,8 @@ class ConfigParser:
         """Print a warning if the maze may be too small for the '42' pattern.
         """
         if width < 9 or height < 6:
-            print(
-                f"Warning: Maze size ({width}x{height}) may be too small "
-                f"for the '42' pattern. The pattern will be omitted.",
-                file=sys.stderr,
-            )
+            print(f"Warning: Maze size ({width}x{height}) may be too small",
+                  file=sys.stderr)
 
     def parse(self) -> Config:
         """Parse the configuration file and return a Config instance.

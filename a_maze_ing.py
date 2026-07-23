@@ -29,13 +29,20 @@ class MazeApp:
     SOUTH = 4
     WEST = 8
 
-    COLOR_SCHEMES = [
-        {"wall": "\033[37m", "path": "\033[36m", "entry": "\033[35m",
-         "exit": "\033[31m", "fortytwo": "\033[33m", "reset": "\033[0m"},
-        {"wall": "\033", "path": "\033[34m", "entry": "\033[35m",
-         "exit": "\033[31m", "fortytwo": "\033[33m", "reset": "\033[0m"},
-        {"wall": "\033[33m", "path": "\033[35m", "entry": "\033[32m",
-         "exit": "\033", "fortytwo": "\033[36m", "reset": "\033[0m"},
+    ANSI_RESET = "\033[0m"
+    ANSI_GREEN = "\033[92m"
+    ANSI_RED = "\033[91m"
+    ANSI_CYAN = "\033[96m"
+    ANSI_YELLOW = "\033[93m"
+
+    WALL_COLORS = [
+        ("white", "\033[97m"),
+        ("red", "\033[91m"),
+        ("green", "\033[92m"),
+        ("yellow", "\033[93m"),
+        ("blue", "\033[94m"),
+        ("magenta", "\033[95m"),
+        ("cyan", "\033[96m"),
     ]
 
     def __init__(self) -> None:
@@ -44,7 +51,8 @@ class MazeApp:
         self.generator: MazeGenerator | None = None
         self.solution: list[Cell] = []
         self.show_path = False
-        self.color_index = 0
+        self.wall_color_index = 0
+        self.wall_color = self.WALL_COLORS[0][1]
         self.use_colors = True
 
     def _parse_args(self) -> str:
@@ -101,7 +109,9 @@ class MazeApp:
             self.generator._create_multiple_paths()
 
         self.generator.reset_visited()
-        self.solution = self.generator.solve_maze_bfs()
+        self.solution = self.generator.solve_maze_bfs(
+            self.generator.entry,
+            self.generator.exit,)
 
     def _cell_to_hex(self, cell: Cell) -> str:
         """Convert a cell's wall bitmask to a hexadecimal character.
@@ -151,17 +161,6 @@ class MazeApp:
             print(f"Error writing output file: {exc}", file=sys.stderr)
             sys.exit(1)
 
-    def _get_color(self, key: str) -> str:
-        """Get the ANSI color code for a given key.
-
-        Returns the ANSI escape sequence for the color, or an empty string
-        if colors are disabled.
-        """
-        if not self.use_colors:
-            return ""
-        scheme = self.COLOR_SCHEMES[self.color_index % len(self.COLOR_SCHEMES)]
-        return scheme.get(key, "")
-
     def _render_ascii(self) -> str:
         """Render the maze as an ASCII string with ANSI colors.
 
@@ -183,49 +182,50 @@ class MazeApp:
             else:
                 top += "+   "
         top += "+"
-        lines.append(self._get_color("wall") + top + self._get_color("reset"))
+        lines.append(self.wall_color + top + self.ANSI_RESET)
 
         for y in range(h):
             content = ""
             for x in range(w):
                 cell = grid[y][x]
                 if cell.walls & self.WEST:
-                    content += "|"
+                    content += self.wall_color + "|" + self.ANSI_RESET
                 else:
                     content += " "
 
                 if cell.static:
-                    content += (self._get_color("fortytwo")
-                                + "███" + self._get_color("wall"))
+                    content += (self.ANSI_YELLOW + "███"
+                                + self.ANSI_RESET + self.wall_color)
                 elif cell.entrance:
-                    content += (self._get_color("entry")
-                                + " E " + self._get_color("wall"))
+                    content += (self.ANSI_GREEN + " E "
+                                + self.ANSI_RESET + self.wall_color)
                 elif cell.exit:
-                    content += (self._get_color("exit")
-                                + " X " + self._get_color("wall"))
+                    content += (self.ANSI_RED + " X "
+                                + self.ANSI_RESET + self.wall_color)
                 elif self.show_path and cell in solution_set:
-                    content += (self._get_color("path")
-                                + " * " + self._get_color("wall"))
+                    content += (self.ANSI_CYAN + " * "
+                                + self.ANSI_RESET + self.wall_color)
+
                 else:
                     content += "   "
 
             last = grid[y][-1]
             if last.walls & self.EAST:
-                content += "|"
+                content += self.wall_color + "|" + self.ANSI_RESET
             else:
                 content += " "
-            lines.append(content + self._get_color("reset"))
+
+            lines.append(content + self.ANSI_RESET)
 
             horiz = ""
             for x in range(w):
                 cell = grid[y][x]
                 if cell.walls & self.SOUTH:
-                    horiz += "+---"
+                    horiz += self.wall_color + "+---" + self.ANSI_RESET
                 else:
-                    horiz += "+   "
-            horiz += "+"
-            lines.append(self._get_color("wall")
-                         + horiz + self._get_color("reset"))
+                    horiz += self.wall_color + "+   " + self.ANSI_RESET
+            horiz += self.wall_color + "+" + self.ANSI_RESET
+            lines.append(self.wall_color + horiz + self.ANSI_RESET)
 
         return "\n".join(lines)
 
@@ -237,7 +237,7 @@ class MazeApp:
         print("=" * 40)
         print("1. Re-generate a new maze")
         print("2. Show / Hide the shortest path")
-        print("3. Rotate the wall colours")
+        print("3. Change the wall colours")
         print("4. Toggle colours on/off")
         print("5. Quit")
         print("-" * 40)
@@ -277,8 +277,15 @@ class MazeApp:
                     input("Press Enter to continue...")
 
                 elif choice == "3":
-                    self.color_index += 1
-                    print("Colours rotated.")
+                    self.wall_color_index = (
+                        self.wall_color_index + 1) % len(self.WALL_COLORS)
+
+                    self.wall_color = self.WALL_COLORS[
+                        self.wall_color_index][1]
+
+                    print(f"Wall colour: "
+                          f"{self.WALL_COLORS[self.wall_color_index][0]}")
+
                     input("Press Enter to continue...")
 
                 elif choice == "4":

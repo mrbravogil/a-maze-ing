@@ -70,7 +70,7 @@ class MazeGenerator:
             raise ValueError("Error: Maze size is too small for '42' pattern.")
 
         offset_x: int = (self.width - 9) // 2
-        offset_y: int = max(1, (self.height - 6) // 2)
+        offset_y: int = max(1, (self.height - 5) // 2)
 
         # pattern_42: list[str] = [
         #     "#..#..####",
@@ -82,7 +82,6 @@ class MazeGenerator:
 
         pattern_42: list[str] = [
             ".#...###.",
-            ".#.....#.",
             ".#.....#.",
             ".###.###.",
             "...#.#...",
@@ -274,24 +273,24 @@ class MazeGenerator:
             cell_b.walls &= ~self.SOUTH
 
     def build_walls(self, cell_a: Cell, cell_b: Cell) -> None:
-            dx = cell_b.x - cell_a.x
-            dy = cell_b.y - cell_a.y
-    
-            if dx == 1:
-                cell_a.walls |= ~self.EAST
-                cell_b.walls |= ~self.WEST
-    
-            elif dx == -1:
-                cell_a.walls |= ~self.WEST
-                cell_b.walls |= ~self.EAST
-    
-            elif dy == 1:
-                cell_a.walls |= ~self.SOUTH
-                cell_b.walls |= ~self.NORTH
-    
-            elif dy == -1:
-                cell_a.walls |= ~self.NORTH
-                cell_b.walls |= ~self.SOUTH
+        dx = cell_b.x - cell_a.x
+        dy = cell_b.y - cell_a.y
+
+        if dx == 1:
+            cell_a.walls |= self.EAST
+            cell_b.walls |= self.WEST
+
+        elif dx == -1:
+            cell_a.walls |= self.WEST
+            cell_b.walls |= self.EAST
+
+        elif dy == 1:
+            cell_a.walls |= self.SOUTH
+            cell_b.walls |= self.NORTH
+
+        elif dy == -1:
+            cell_a.walls |= self.NORTH
+            cell_b.walls |= self.SOUTH
 
     def dfs_generate(self) -> list[list[Cell]]:
         self._generate_maze_dfs()
@@ -299,8 +298,10 @@ class MazeGenerator:
 
         if not self.perfect:
             self._pacman_check()
-            while not self._two_paths():
+            attempts = 0
+            while not self._two_paths() and attempts < 50:
                 self._create_multiple_paths()
+                attempts += 1
 
         return self.maze.grid
 
@@ -317,12 +318,12 @@ class MazeGenerator:
             current = stack[-1]
             neighbours = self.get_unvisited_neighbours(current)
             if len(neighbours) > 0:
-                next = self.rng.choice(neighbours)
-                self.remove_walls(current, next)
-                if self._check_3x3():
-                    self.build_walls(current, next)
-                next.visited = True
-                stack.append(next)
+                nxt = self.rng.choice(neighbours)
+                self.remove_walls(current, nxt)
+                #if self._check_3x3():
+                    #self.build_walls(current, nxt)
+                nxt.visited = True
+                stack.append(nxt)
             else:
                 stack.pop()
 
@@ -337,19 +338,24 @@ class MazeGenerator:
             nb = self.rng.choice(neighbours)
             if self._has_wall_between(cell, nb):
                 self.remove_walls(cell, nb)
-                if self._check_3x3():
-                    self.build_walls(cell, nb)
+                #if self._check_3x3():
+                    #self.build_walls(cell, nb)
 
     def _two_paths(self) -> bool:
         if self.entry is None:
-            raise ValueError("Error: self.entry must"
-                             "be inicialized before two paths")
-        first_path: list[Cell] = self.solve_maze_dfs(self.entry)
-        if first_path:
-            for cell in first_path:
-                second_path: list[Cell] = self.solve_maze_dfs(cell)
-                if second_path:
-                    return True
+            raise ValueError("Error: self.entry must be "
+                             "initialized before two paths")
+
+        first_path = self.solve_maze_dfs(self.entry, self.exit)
+        if not first_path:
+            return False
+
+        for cell in first_path:
+            if cell == self.entry or cell == self.exit:
+                continue
+            second_path = self.solve_maze_dfs(cell, self.exit)
+            if second_path:
+                return True
 
         return False
 
@@ -369,8 +375,8 @@ class MazeGenerator:
                     for cell_b in self.get_all_neighbours(cell_a):
                         if cell_b in main_path:
                             self.remove_walls(cell_a, cell_b)
-                            if self._check_3x3():
-                                self.build_walls(cell_a, cell_b)
+                            #if self._check_3x3():
+                                #self.build_walls(cell_a, cell_b)
                             wall_found = True
                         if wall_found:
                             break
@@ -411,26 +417,18 @@ class MazeGenerator:
         return path
 
     def _pacman_check(self) -> None:
-        top_right: Cell = self.maze.grid[0][0]
-        top_left: Cell = self.maze.grid[0][self.width-1]
-        bottom_right: Cell = self.maze.grid[self.height-1][0]
-        bottom_left: Cell = self.maze.grid[self.height-1][self.width-1]
-        center: Cell = self.maze.grid[self.height//2][self.width//2]
+        for corner in [self.maze.grid[0][0], self.maze.grid[0][self.width - 1],
+                       self.maze.grid[self.height - 1][0],
+                       self.maze.grid[self.height - 1][self.width - 1],
+                       self.maze.grid[self.height // 2][self.width // 2]]:
+            if self.solve_maze_bfs(self.entry, corner):
+                continue
 
-        check_list: list[Cell] = [top_right, top_left, bottom_right, bottom_left, center]
-        for c in check_list:
-            while not self.solve_maze_bfs(self.entry, c):
-                open: bool = False
-                neighbours = self.get_all_neighbours(c)
-                for n in neighbours:
-                    if self.solve_maze_bfs(self.entry, n):
-                        self.remove_walls(n, c)
-                        if self._check_3x3():
-                            self.build_walls(n, c)
-                        else:
-                            open = True
-                            break
-                if not open:
+            for n in self.get_all_neighbours(corner):
+                if self.solve_maze_bfs(self.entry, n):
+                    self.remove_walls(n, corner)
+                    #if self._check_3x3():
+                        #self.build_walls(n, corner)
                     break
 
     def _check_3x3(self) -> bool:
@@ -485,23 +483,36 @@ class MazeGenerator:
                     queue.append(n)
         return []
 
-    def solve_maze_dfs(self, start: Cell) -> list[Cell]:
+    def solve_maze_dfs(self, start: Cell, end: Cell |
+                       None = None) -> list[Cell]:
+        if start is None:
+            raise ValueError("Error: start must be "
+                             "initialized before solve dfs")
+        if end is None:
+            end = self.exit
+        if end is None:
+            raise ValueError("Error: self.exit must be "
+                             "initialized before solve dfs")
+
         self.reset_visited()
 
-        stack = deque([start])
+        stack = [start]
         parents: dict[Cell, Cell] = {}
         start.visited = True
 
-        while len(stack) > 0:
-            # LIFO
+        while stack:
             current = stack.pop()
-            if current == self.exit:
-                return self.reconstruct_path(self.exit, parents)
+
+            if current == end:
+                return self.reconstruct_path(end, parents)
+
             neighbours = self.get_reachable_neighbours(current)
             for n in neighbours:
-                n.visited = True
-                parents[n] = current
-                stack.append(n)
+                if not n.visited:
+                    n.visited = True
+                    parents[n] = current
+                    stack.append(n)
+
         return []
 
     def reconstruct_path(self,
