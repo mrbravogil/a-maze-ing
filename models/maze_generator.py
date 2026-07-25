@@ -67,7 +67,7 @@ class MazeGenerator:
                              "initialized before draw_fortytwo().")
 
         if self.width < 9 or self.height < 6:
-            raise ValueError("Error: Maze size is too small for '42' pattern.")
+            print("Error: Maze size is too small for '42' pattern.")
 
         offset_x: int = (self.width - 9) // 2
         offset_y: int = max(1, (self.height - 5) // 2)
@@ -107,10 +107,6 @@ class MazeGenerator:
                 self.maze.grid[ty][tx].static = True
                 self.maze.grid[ty][tx].visited = True
 
-    # def _validate_dimensions(self) -> None:
-    #     if self.width <= 0 or self.height <= 0:
-    #         raise ValueError("Maze dimensions must be positive.")
-
     def _validate_entry_exit(self) -> None:
         if not (0 <= self.entry_x < self.width
                 and 0 <= self.entry_y < self.height):
@@ -136,27 +132,14 @@ class MazeGenerator:
         x, y = cell.x, cell.y
         original_cell: Cell = self.maze.grid[y][x]
 
-        if y == 0:
-            ny = y + 1
-            nx = x
-        elif y == self.height - 1:
-            ny = y - 1
-            nx = x
-        elif x == 0:
-            ny = y
-            nx = x + 1
-        elif x == self.width - 1:
-            ny = y
-            nx = x - 1
-        else:
-            raise Exception(f"{label} must be within width/height")
+        if getattr(original_cell, "static", False):
+            raise ValueError(f"{label} cannot be placed on the 42 pattern.")
 
-        """ Checks if values are valid, if they're within height and width.
-            Then removes inner walls.
-        """
-        if 0 <= nx < self.width and 0 <= ny < self.height:
-            n_cell = self.maze.grid[ny][nx]
-            self.remove_walls(original_cell, n_cell)
+        neighbours = self.get_all_neighbours(original_cell)
+        if not neighbours:
+            raise ValueError(f"{label} has no valid neighbours to carve.")
+        n_cell = self.rng.choice(neighbours)
+        self.remove_walls(original_cell, n_cell)
 
     def get_all_neighbours(self, cell: Cell) -> list[Cell]:
         neighbours: list[Cell] = []
@@ -299,8 +282,14 @@ class MazeGenerator:
         if not self.perfect:
             self._pacman_check()
             attempts = 0
-            while not self._two_paths() and attempts < 50:
+            while not self._two_paths() and attempts < 10:
                 self._create_multiple_paths()
+                attempts += 1
+            self._reduce_dead_end()
+            dead_ends: list[Cell] = self._count_dead_ends()
+            attempts = 0
+            while len(dead_ends) < 5 and len(dead_ends) > 0 and attempts < 60:
+                self._reduce_five_ends()
                 attempts += 1
 
         return self.maze.grid
@@ -338,8 +327,6 @@ class MazeGenerator:
             nb = self.rng.choice(neighbours)
             if self._has_wall_between(cell, nb):
                 self.remove_walls(cell, nb)
-                #if self._check_3x3():
-                    #self.build_walls(cell, nb)
 
     def _two_paths(self) -> bool:
         if self.entry is None:
@@ -375,8 +362,6 @@ class MazeGenerator:
                     for cell_b in self.get_all_neighbours(cell_a):
                         if cell_b in main_path:
                             self.remove_walls(cell_a, cell_b)
-                            #if self._check_3x3():
-                                #self.build_walls(cell_a, cell_b)
                             wall_found = True
                         if wall_found:
                             break
@@ -427,40 +412,62 @@ class MazeGenerator:
             for n in self.get_all_neighbours(corner):
                 if self.solve_maze_bfs(self.entry, n):
                     self.remove_walls(n, corner)
-                    #if self._check_3x3():
-                        #self.build_walls(n, corner)
                     break
 
-    def _check_3x3(self) -> bool:
-        for y in range(self.height - 2):
-            for x in range(self.width - 2):
-                c0 = self.maze.grid[y][x]
-                c1 = self.maze.grid[y][x + 1]
-                c2 = self.maze.grid[y][x + 2]
-                c3 = self.maze.grid[y + 1][x]
-                c4 = self.maze.grid[y + 1][x + 1]
-                c5 = self.maze.grid[y + 1][x + 2]
-                c6 = self.maze.grid[y + 2][x]
-                c7 = self.maze.grid[y + 2][x + 1]
-                c8 = self.maze.grid[y + 2][x + 2]
+    def _reduce_dead_end(self) -> None:
+        attempts: int = 0
 
-                if (
-                    not self._has_wall_between(c0, c1) and
-                    not self._has_wall_between(c1, c2) and
-                    not self._has_wall_between(c3, c4) and
-                    not self._has_wall_between(c4, c5) and
-                    not self._has_wall_between(c6, c7) and
-                    not self._has_wall_between(c7, c8) and
-                    not self._has_wall_between(c0, c3) and
-                    not self._has_wall_between(c3, c6) and
-                    not self._has_wall_between(c1, c4) and
-                    not self._has_wall_between(c4, c7) and
-                    not self._has_wall_between(c2, c5) and
-                    not self._has_wall_between(c5, c8)
-                ):
-                    return True
+        while attempts < 1000:
+            dead_ends: list[Cell] = self._count_dead_ends()
+            if len(dead_ends) <= 2:
+                break
 
-        return False
+            cell = self.rng.choice(dead_ends)
+            neighbours = self.get_all_neighbours(cell)
+
+            candidates: list[Cell] = []
+            for n in neighbours:
+                if self._has_wall_between(cell, n):
+                    candidates.append(n)
+
+            if not candidates:
+                continue
+
+            nb: Cell = self.rng.choice(candidates)
+            self.remove_walls(cell, nb)
+            attempts += 1
+
+    def _reduce_five_ends(self) -> None:
+        dead_ends: list[Cell] = self._count_dead_ends()
+        for cell in dead_ends:
+            neighbours = self.get_all_neighbours(cell)
+            candidates: list[Cell] = []
+            for n in neighbours:
+                if self._has_wall_between(cell, n):
+                    candidates.append(n)
+            if not candidates:
+                continue
+            
+            nb: Cell = self.rng.choice(candidates)
+            self.remove_walls(cell, nb)
+
+    def _count_dead_ends(self) -> list[Cell]:
+        dead_ends: list[Cell] = []
+
+        for row in self.maze.grid:
+            for cell in row:
+                if getattr(cell, "static", False):
+                    continue
+
+                open_paths: int = 0
+                for n in self.get_all_neighbours(cell):
+                    if not self._has_wall_between(cell, n):
+                        open_paths += 1
+
+                if open_paths == 1:
+                    dead_ends.append(cell)
+
+        return dead_ends
 
     def solve_maze_bfs(self, start: Cell, end: Cell) -> list[Cell]:
         if start is None or end is None:
@@ -528,6 +535,37 @@ class MazeGenerator:
             path.append(current)
         path.reverse()
         return path
+
+    def _check_3x3(self) -> bool:
+        for y in range(self.height - 2):
+            for x in range(self.width - 2):
+                c0 = self.maze.grid[y][x]
+                c1 = self.maze.grid[y][x + 1]
+                c2 = self.maze.grid[y][x + 2]
+                c3 = self.maze.grid[y + 1][x]
+                c4 = self.maze.grid[y + 1][x + 1]
+                c5 = self.maze.grid[y + 1][x + 2]
+                c6 = self.maze.grid[y + 2][x]
+                c7 = self.maze.grid[y + 2][x + 1]
+                c8 = self.maze.grid[y + 2][x + 2]
+
+                if (
+                    not self._has_wall_between(c0, c1) and
+                    not self._has_wall_between(c1, c2) and
+                    not self._has_wall_between(c3, c4) and
+                    not self._has_wall_between(c4, c5) and
+                    not self._has_wall_between(c6, c7) and
+                    not self._has_wall_between(c7, c8) and
+                    not self._has_wall_between(c0, c3) and
+                    not self._has_wall_between(c3, c6) and
+                    not self._has_wall_between(c1, c4) and
+                    not self._has_wall_between(c4, c7) and
+                    not self._has_wall_between(c2, c5) and
+                    not self._has_wall_between(c5, c8)
+                ):
+                    return True
+
+        return False
 
     def maze_to_str(self) -> dict:
         if ((self.entry, self.exit) == (None, None)
