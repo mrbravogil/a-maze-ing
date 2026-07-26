@@ -3,7 +3,7 @@
 This module provides the ConfigParser class to read and validate
 maze generation configuration files in KEY=VALUE format.
 
-Example configuration file::
+Example configuration file:
 
     WIDTH=20
     HEIGHT=15

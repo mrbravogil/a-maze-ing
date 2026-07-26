@@ -1,3 +1,5 @@
+"""Maze class for the A-Maze-ing project."""
+
 from typing import Optional
 from .cell import Cell
 

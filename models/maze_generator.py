@@ -1,3 +1,11 @@
+"""Maze Generator class for the A-Maze-ing project.
+
+This module provides the Maze Generator class to create and carve
+the maze structure. As well as generate the path between the maze's
+entry and exit.
+"""
+
+
 from . import Maze, Cell
 from typing import Any
 from collections import deque
@@ -286,7 +294,7 @@ class MazeGenerator:
         elif dy == -1:
             return (cell_a.walls & self.NORTH) != 0
 
-        raise ValueError("Cells are not neighbours")
+        raise ValueError("Cells are not neighbours has wall")
 
     def remove_walls(self, cell_a: Cell, cell_b: Cell) -> None:
         """Removes the wall separating two cells.
@@ -313,34 +321,32 @@ class MazeGenerator:
             cell_a.walls &= ~self.NORTH
             cell_b.walls &= ~self.SOUTH
 
-        raise ValueError("Cells are not neighbours")
-
-    def build_walls(self, cell_a: Cell, cell_b: Cell) -> None:
-        """Builds a wall between two cells.
-        ValueError raises if the cells provided are not neighbours.
+    # def build_walls(self, cell_a: Cell, cell_b: Cell) -> None:
+    #     """Builds a wall between two cells.
+    #     ValueError raises if the cells provided are not neighbours.
                                                 
-        Input = two cells
-        """
-        dx = cell_b.x - cell_a.x
-        dy = cell_b.y - cell_a.y
+    #     Input = two cells
+    #     """
+    #     dx = cell_b.x - cell_a.x
+    #     dy = cell_b.y - cell_a.y
 
-        if dx == 1:
-            cell_a.walls |= self.EAST
-            cell_b.walls |= self.WEST
+    #     if dx == 1:
+    #         cell_a.walls |= self.EAST
+    #         cell_b.walls |= self.WEST
 
-        elif dx == -1:
-            cell_a.walls |= self.WEST
-            cell_b.walls |= self.EAST
+    #     elif dx == -1:
+    #         cell_a.walls |= self.WEST
+    #         cell_b.walls |= self.EAST
 
-        elif dy == 1:
-            cell_a.walls |= self.SOUTH
-            cell_b.walls |= self.NORTH
+    #     elif dy == 1:
+    #         cell_a.walls |= self.SOUTH
+    #         cell_b.walls |= self.NORTH
 
-        elif dy == -1:
-            cell_a.walls |= self.NORTH
-            cell_b.walls |= self.SOUTH
+    #     elif dy == -1:
+    #         cell_a.walls |= self.NORTH
+    #         cell_b.walls |= self.SOUTH
 
-        raise ValueError("Cells are not neighbours")
+    #     raise ValueError("Cells are not neighbours build wall")
 
     def dfs_generate(self) -> list[list[Cell]]:
         """Main path generation function. 
@@ -447,6 +453,18 @@ class MazeGenerator:
         return False
 
     def _connectivity(self) -> None:
+        """Ensures full connectivity throughout the maze grid, meaning
+        that all cells are accesible and there are not any blocked
+        areas.
+
+        1. Builds a main path from self.entry to other accesible neighbours.
+        2. Checks whether there are any non static cells within the maze
+        that are not included in the main path.
+        3. Loops through each cell not included in main_path to carve
+        alternative paths that reach them.
+        
+        Raises ValueError if entry/exit has not been inicialized.
+        """
         if self.entry is None or self.exit is None:
             raise ValueError("Error: self.entry and self.exit must"
                              "be inicialized before connectivity")
@@ -472,6 +490,13 @@ class MazeGenerator:
                 main_path = self._flood_maze(self.entry)
 
     def _transit_cell(self, main_path: list[Cell]) -> bool:
+        """Searches within the maze grid non static cells which
+        are not included in the given path.
+        Returns True as long as there are non static cells within the maze grid
+        that are not included in the main path.
+        Parameter: main_path, given list of cells.
+        Returns: boolean value.
+        """
         for row in self.maze.grid:
             for cell in row:
                 if cell.static is not True and cell not in main_path:
@@ -479,6 +504,12 @@ class MazeGenerator:
         return False
 
     def _first_transit_cell(self, main_path: list[Cell]) -> Cell | None:
+        """Searches within the maze grid non static cells which
+        are not included in the given path.
+        Returns the first non static cell not included in the main path.
+        Parameter: main_path, given list of cells.
+        Returns: cell.
+        """
         for row in self.maze.grid:
             for cell in row:
                 if cell.static is not True and cell not in main_path:
@@ -486,6 +517,13 @@ class MazeGenerator:
         return None
 
     def _flood_maze(self, start: Cell) -> list[Cell]:
+        """Makes a given cell accesible by building a path
+        from the parameter path to any unvisited neighbours,
+        using the BFS algorithm.
+        
+        Parameter: start cell
+        Return: path.
+        """
         self.reset_visited()
         queue = deque([start])
         start.visited = True
@@ -502,6 +540,11 @@ class MazeGenerator:
         return path
 
     def _pacman_check(self) -> None:
+        """Ensures that the maze grid's four edge corners and center
+        are accesible.
+        It loops through each corners and builds a path using the
+        BFS algorithm.
+        """
         for corner in [self.maze.grid[0][0], self.maze.grid[0][self.width - 1],
                        self.maze.grid[self.height - 1][0],
                        self.maze.grid[self.height - 1][self.width - 1],
@@ -515,6 +558,17 @@ class MazeGenerator:
                     break
 
     def _reduce_dead_end(self) -> None:
+        """Reduces the number of dead ends within the maze grid.
+
+        1. Counts how many dead ends exist in the grid.
+        2. Chooses a random dead end cell
+        3. Checks all its neighbours and selects those who
+        share a wall.
+        4. Randomly picks one of the neighbours and destroys
+        their sharing wall.
+
+        Tries to reduce dead ends to max of 2 during 1000 attemps.
+        """
         attempts: int = 0
 
         while attempts < 1000:
@@ -538,6 +592,12 @@ class MazeGenerator:
             attempts += 1
 
     def _reduce_five_ends(self) -> None:
+        """Auxiliary function which aims to reduce the number of dead ends 
+        from a list of five cells.
+        
+        Loops through each dead end and picks the neighbours which share
+        a wall. Then randomly picks a candidate and breaks the wall they share.
+        """
         dead_ends: list[Cell] = self._count_dead_ends()
         for cell in dead_ends:
             neighbours = self.get_all_neighbours(cell)
@@ -653,60 +713,60 @@ class MazeGenerator:
         path.reverse()
         return path
 
-    def _check_3x3(self) -> bool:
-        """Checks a range of 3x3 cells to confirm if they don't 
-        share any walls amongst them.
+    # def _check_3x3(self) -> bool:
+    #     """Checks a range of 3x3 cells to confirm if they don't 
+    #     share any walls amongst them.
                 
-        Returns: boolean value.
-        """
-        for y in range(self.height - 2):
-            for x in range(self.width - 2):
-                c0 = self.maze.grid[y][x]
-                c1 = self.maze.grid[y][x + 1]
-                c2 = self.maze.grid[y][x + 2]
-                c3 = self.maze.grid[y + 1][x]
-                c4 = self.maze.grid[y + 1][x + 1]
-                c5 = self.maze.grid[y + 1][x + 2]
-                c6 = self.maze.grid[y + 2][x]
-                c7 = self.maze.grid[y + 2][x + 1]
-                c8 = self.maze.grid[y + 2][x + 2]
+    #     Returns: boolean value.
+    #     """
+    #     for y in range(self.height - 2):
+    #         for x in range(self.width - 2):
+    #             c0 = self.maze.grid[y][x]
+    #             c1 = self.maze.grid[y][x + 1]
+    #             c2 = self.maze.grid[y][x + 2]
+    #             c3 = self.maze.grid[y + 1][x]
+    #             c4 = self.maze.grid[y + 1][x + 1]
+    #             c5 = self.maze.grid[y + 1][x + 2]
+    #             c6 = self.maze.grid[y + 2][x]
+    #             c7 = self.maze.grid[y + 2][x + 1]
+    #             c8 = self.maze.grid[y + 2][x + 2]
 
-                if (
-                    not self._has_wall_between(c0, c1) and
-                    not self._has_wall_between(c1, c2) and
-                    not self._has_wall_between(c3, c4) and
-                    not self._has_wall_between(c4, c5) and
-                    not self._has_wall_between(c6, c7) and
-                    not self._has_wall_between(c7, c8) and
-                    not self._has_wall_between(c0, c3) and
-                    not self._has_wall_between(c3, c6) and
-                    not self._has_wall_between(c1, c4) and
-                    not self._has_wall_between(c4, c7) and
-                    not self._has_wall_between(c2, c5) and
-                    not self._has_wall_between(c5, c8)
-                ):
-                    return True
+    #             if (
+    #                 not self._has_wall_between(c0, c1) and
+    #                 not self._has_wall_between(c1, c2) and
+    #                 not self._has_wall_between(c3, c4) and
+    #                 not self._has_wall_between(c4, c5) and
+    #                 not self._has_wall_between(c6, c7) and
+    #                 not self._has_wall_between(c7, c8) and
+    #                 not self._has_wall_between(c0, c3) and
+    #                 not self._has_wall_between(c3, c6) and
+    #                 not self._has_wall_between(c1, c4) and
+    #                 not self._has_wall_between(c4, c7) and
+    #                 not self._has_wall_between(c2, c5) and
+    #                 not self._has_wall_between(c5, c8)
+    #             ):
+    #                 return True
 
-        return False
+    #     return False
 
-    def maze_to_str(self) -> dict:
-        if ((self.entry, self.exit) == (None, None)
-                or self.entry is None or self.exit is None):
-            raise ValueError("Error: self.entry and self.exit must"
-                             "be inicialized before executing maze to str")
-        data: dict[str, Any] = {}
-        data["height"] = self.height
-        data["width"] = self.width
-        data["entry"] = {"x": self.entry.x, "y": self.entry.y}
-        data["exit"] = {"x": self.exit.x, "y": self.exit.y}
-        data["cells"] = []
+    # def maze_to_str(self) -> dict:
+    #     if ((self.entry, self.exit) == (None, None)
+    #             or self.entry is None or self.exit is None):
+    #         raise ValueError("Error: self.entry and self.exit must"
+    #                          "be inicialized before executing maze to str")
+    #     data: dict[str, Any] = {}
+    #     data["height"] = self.height
+    #     data["width"] = self.width
+    #     data["entry"] = {"x": self.entry.x, "y": self.entry.y}
+    #     data["exit"] = {"x": self.exit.x, "y": self.exit.y}
+    #     data["cells"] = []
 
-        for row in self.maze.grid:
-            row_str = []
-            for c in row:
-                row_str.append({
-                    "x": c.x, "y": c.y, "walls": c.walls,
-                    "static": c.static})
-            data["cells"].append(row_str)
+    #     for row in self.maze.grid:
+    #         row_str = []
+    #         for c in row:
+    #             row_str.append({
+    #                 "x": c.x, "y": c.y, "walls": c.walls,
+    #                 "static": c.static})
+    #         data["cells"].append(row_str)
 
-        return data
+    #     return data

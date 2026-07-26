@@ -105,8 +105,8 @@ class MazeApp:
         self.generator.carve_entrance_exit()
         self.generator.dfs_generate()
 
-        if not self.config.perfect:
-            self.generator._create_multiple_paths()
+        # if not self.config.perfect:
+        #     self.generator._create_multiple_paths()
 
         self.generator.reset_visited()
         self.solution = self.generator.solve_maze_bfs(
