@@ -151,7 +151,7 @@ class MazeGenerator:
         self.do_carve(self.entry, "Entry")
         self.do_carve(self.exit, "Exit")
 
-    def do_carve(self, cell: Cell, label: str = "cell"):
+    def do_carve(self, cell: Cell, label: str = "cell") -> None:
         """Carves an entrance to a chosen cell.
 
         Raises an error if the cell is placed within the "42" pattern.
@@ -176,8 +176,11 @@ class MazeGenerator:
         It checks the four sides of the input cell and returns a list
         of non-static neighbouring cells which are placed within
         maze's bounds.
-        Input = single cell
-        Return = list of neighbouring cells
+
+        Parameter:
+            cell: Cell 
+        Returns:
+            list[Cell]
         """
         neighbours: list[Cell] = []
         if cell.y > 0:
@@ -204,8 +207,11 @@ class MazeGenerator:
         It checks the four sides of the input cell and returns a list
         of non-static unvisited neighbouring cells which are placed within
         maze's bounds.
-        Input = single cell
-        Return = list of neighbouring cells
+
+        Parameter:
+            cell: Cell 
+        Returns:
+            list[Cell]
         """
         neighbours: list[Cell] = []
         if cell.y > 0:
@@ -236,8 +242,11 @@ class MazeGenerator:
         of non-static unvisited accesible neighbouring cells which are placed within
         maze's bounds.
         Accesible meaning cell's are not separated by a wall.
-        Input = single cell
-        Return = list of neighbouring cells
+
+        Parameter:
+            cell: Cell 
+        Returns:
+            list[Cell]
         """
         neighbours: list[Cell] = []
         if cell.y > 0:
@@ -276,8 +285,11 @@ class MazeGenerator:
 
         ValueError raises if the cells provided are not neighbours.
                                 
-        Input = two cells
-        Return = boolean value True or False
+        Parameters:
+            cell_a: Cell 
+            cell_b: Cell 
+        Returns:
+            boolean
         """
         dx = cell_b.x - cell_a.x
         dy = cell_b.y - cell_a.y
@@ -300,7 +312,9 @@ class MazeGenerator:
         """Removes the wall separating two cells.
         ValueError raises if the cells provided are not neighbours.
                                         
-        Input = two cells
+        Parameters:
+            cell_a: Cell 
+            cell_b: Cell 
         """
         dx = cell_b.x - cell_a.x
         dy = cell_b.y - cell_a.y
@@ -494,8 +508,11 @@ class MazeGenerator:
         are not included in the given path.
         Returns True as long as there are non static cells within the maze grid
         that are not included in the main path.
-        Parameter: main_path, given list of cells.
-        Returns: boolean value.
+        
+        Parameters:
+            main_path: list[Cell]
+        Returns:
+            boolean
         """
         for row in self.maze.grid:
             for cell in row:
@@ -507,8 +524,11 @@ class MazeGenerator:
         """Searches within the maze grid non static cells which
         are not included in the given path.
         Returns the first non static cell not included in the main path.
-        Parameter: main_path, given list of cells.
-        Returns: cell.
+
+        Parameters:
+            main_path: list[Cell]
+        Returns:
+            Cell | None
         """
         for row in self.maze.grid:
             for cell in row:
@@ -521,8 +541,10 @@ class MazeGenerator:
         from the parameter path to any unvisited neighbours,
         using the BFS algorithm.
         
-        Parameter: start cell
-        Return: path.
+        Parameters:
+            start: Cell
+        Returns:
+            list[Cell]
         """
         self.reset_visited()
         queue = deque([start])
@@ -617,7 +639,8 @@ class MazeGenerator:
         For each cell within the maze it check if it only has
         one open wall.
                 
-        Returns a list of dead end cells.
+        Returns:
+            list[Cell].
         """
         dead_ends: list[Cell] = []
 
@@ -641,7 +664,12 @@ class MazeGenerator:
         to the end cell using the BFS algorithm.
                 
         Raises ValueError if start/end has not been inicialized.
-        Returns: list of the path's cells or an empty list.
+        
+        Parameters:
+            start: Cell
+            end: Cell
+        Returns:
+            list[Cell] | []
         """
         if start is None or end is None:
             raise ValueError("Error: start and end must"
@@ -669,7 +697,11 @@ class MazeGenerator:
         to the end cell using the DFS algorithm.
                         
         Raises ValueError if start/end has not been inicialized.
-        Returns: list of the path's cells or an empty list.
+        Parameters:
+            start: Cell
+            end: Cell
+        Returns:
+            list[Cell] | []
         """
         if start is None or end is None:
                     raise ValueError("Error: start and end must"
@@ -700,7 +732,11 @@ class MazeGenerator:
         """Converts a dictionary of cells into a list of cells that
         represent the path from starting cell to an end cell.
 
-        Returns: list of the path's cells.
+        Parameters:
+            end: Cell
+            parents: dict[Cell, Cell] = dictionary of neighbouring cells
+        Returns:
+            list[Cell]
         """
         if end is None:
             raise ValueError("Error: end must be inicialized before"
