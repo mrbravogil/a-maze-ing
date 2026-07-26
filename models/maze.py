@@ -3,6 +3,11 @@ from .cell import Cell
 
 
 class Maze:
+    """Represents the base structure of a maze.
+
+    Holds the maze dimensions, the entrance and exit cells, and the grid
+    of cells that makes up the full maze layout.
+    """
     def __init__(
             self,
             width: int,
@@ -14,20 +19,3 @@ class Maze:
         self.entry: Optional[Cell] = entry
         self.exit: Optional[Cell] = exit
         self.grid: list[list[Cell]] = []
-
-    # def generate(self, maze_gen: MazeGenerator) -> Maze:
-    #     maze_gen.maze_init()
-    #     maze_gen.carve_entrance_exit()
-    #     maze_gen.maze.grid = maze_gen.dfs_generate()
-    #     maze_gen.reset_visited()
-    #     self.maze.grid = maze_gen.maze.grid
-    #     return self.maze
-
-    # def solve(self, maze_gen: MazeGenerator, algorithm: bool):
-    #     maze_gen.reset_visited()
-    #     if algorithm == "bfs":
-    #         maze_gen.solve_maze_bfs()
-    #     elif algorithm == "dfs":
-    #         maze_gen.solve_maze_dfs()
-    #     else:
-    #         raise Exception("Unknown algorithm")
