@@ -53,7 +53,6 @@ class MazeApp:
         self.show_path = False
         self.wall_color_index = 0
         self.wall_color = self.WALL_COLORS[0][1]
-        self.use_colors = True
 
     def _parse_args(self) -> str:
         """Parse command-line arguments.
@@ -238,8 +237,7 @@ class MazeApp:
         print("1. Re-generate a new maze")
         print("2. Show / Hide the shortest path")
         print("3. Change the wall colours")
-        print("4. Toggle colours on/off")
-        print("5. Quit")
+        print("4. Quit")
         print("-" * 40)
 
     def _run_interactive(self) -> None:
@@ -255,7 +253,7 @@ class MazeApp:
                 self._display_menu()
 
                 try:
-                    choice = input("Choice? (1-5): ").strip()
+                    choice = input("Choice? (1-4): ").strip()
                 except (EOFError, KeyboardInterrupt):
                     print("\nGoodbye!")
                     break
@@ -289,16 +287,10 @@ class MazeApp:
                     input("Press Enter to continue...")
 
                 elif choice == "4":
-                    self.use_colors = not self.use_colors
-                    status = "enabled" if self.use_colors else "disabled"
-                    print(f"Colours {status}.")
-                    input("Press Enter to continue...")
-
-                elif choice == "5":
                     print("Goodbye!")
                     break
                 else:
-                    print("Invalid choice. Please enter 1-5.")
+                    print("Invalid choice. Please enter 1-4.")
                     input("Press Enter to continue...")
 
             except (EOFError, KeyboardInterrupt):

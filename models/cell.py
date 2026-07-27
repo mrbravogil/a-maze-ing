@@ -1,5 +1,6 @@
 """Cell class for the A-Maze-ing project."""
 
+
 class Cell:
     """Represents a single cell in the maze.
 

@@ -7,7 +7,6 @@ entry and exit.
 
 
 from . import Maze, Cell
-from typing import Any
 from collections import deque
 import random
 
@@ -172,13 +171,13 @@ class MazeGenerator:
 
     def get_all_neighbours(self, cell: Cell) -> list[Cell]:
         """Provides a list of non-static neighbouring cells.
-        
+
         It checks the four sides of the input cell and returns a list
         of non-static neighbouring cells which are placed within
         maze's bounds.
 
         Parameter:
-            cell: Cell 
+            cell: Cell
         Returns:
             list[Cell]
         """
@@ -203,13 +202,13 @@ class MazeGenerator:
 
     def get_unvisited_neighbours(self, cell: Cell) -> list[Cell]:
         """Provides a list of non-static unvisited neighbouring cells.
-                
+
         It checks the four sides of the input cell and returns a list
         of non-static unvisited neighbouring cells which are placed within
         maze's bounds.
 
         Parameter:
-            cell: Cell 
+            cell: Cell
         Returns:
             list[Cell]
         """
@@ -236,15 +235,16 @@ class MazeGenerator:
         return neighbours
 
     def get_reachable_neighbours(self, cell: Cell) -> list[Cell]:
-        """Provides a list of non-static unvisited accesible neighbouring cells.
-                        
+        """Provides a list of non-static unvisited accesible
+        neighbouring cells.
+
         It checks the four sides of the input cell and returns a list
-        of non-static unvisited accesible neighbouring cells which are placed within
-        maze's bounds.
+        of non-static unvisited accesible neighbouring cells which
+        are placed within maze's bounds.
         Accesible meaning cell's are not separated by a wall.
 
         Parameter:
-            cell: Cell 
+            cell: Cell
         Returns:
             list[Cell]
         """
@@ -284,10 +284,10 @@ class MazeGenerator:
         """Checks if two cells are separated by a wall.
 
         ValueError raises if the cells provided are not neighbours.
-                                
+
         Parameters:
-            cell_a: Cell 
-            cell_b: Cell 
+            cell_a: Cell
+            cell_b: Cell
         Returns:
             boolean
         """
@@ -311,10 +311,10 @@ class MazeGenerator:
     def remove_walls(self, cell_a: Cell, cell_b: Cell) -> None:
         """Removes the wall separating two cells.
         ValueError raises if the cells provided are not neighbours.
-                                        
+
         Parameters:
-            cell_a: Cell 
-            cell_b: Cell 
+            cell_a: Cell
+            cell_b: Cell
         """
         dx = cell_b.x - cell_a.x
         dy = cell_b.y - cell_a.y
@@ -338,7 +338,7 @@ class MazeGenerator:
     # def build_walls(self, cell_a: Cell, cell_b: Cell) -> None:
     #     """Builds a wall between two cells.
     #     ValueError raises if the cells provided are not neighbours.
-                                                
+
     #     Input = two cells
     #     """
     #     dx = cell_b.x - cell_a.x
@@ -363,8 +363,8 @@ class MazeGenerator:
     #     raise ValueError("Cells are not neighbours build wall")
 
     def dfs_generate(self) -> list[list[Cell]]:
-        """Main path generation function. 
-        1. It generates the path patterns of the Maze Grid using DFS algorithm. 
+        """Main path generation function.
+        1. It generates the path patterns of the Maze Grid using DFS algorithm.
         2. Ensures full connectivity within the maze so there are not
         isolated areas.
 
@@ -372,10 +372,11 @@ class MazeGenerator:
         If the maze's config file specifies PERFECT=FALSE the following rules
         apply to this function:
         1. Pacman check: Ensure four corners and center are accesible.
-        2. Two paths: Ensure there are at least two different paths from entry to exit.
-        3. Reduce dead ends: Ensure there are a maximum of two dead-ends within the maze
-           grid.
-        
+        2. Two paths: Ensure there are at least two different
+            paths from entry to exit.
+        3. Reduce dead ends: Ensure there are a maximum of two
+            dead-ends within the maze grid.
+
         Return = Maze Grid
         """
         self._generate_maze_dfs()
@@ -398,8 +399,8 @@ class MazeGenerator:
 
     def _generate_maze_dfs(self) -> None:
         """Carves paths within the maze grid.
-        Starting at the entry cell and using DFS algorithm checks 
-        unvisited neighbours and randomly removes the walls that 
+        Starting at the entry cell and using DFS algorithm checks
+        unvisited neighbours and randomly removes the walls that
         separates them.
 
         Raises ValueError if entry has not been inicialized.
@@ -424,11 +425,11 @@ class MazeGenerator:
                 stack.pop()
 
     def _create_multiple_paths(self) -> None:
-        """Carves multiple paths within the maze grid. 
+        """Carves multiple paths within the maze grid.
         Function used in a non perfect Maze.
 
-        Starting at a randomly chosen cell checks 
-        unvisited neighbours and removes the wall that 
+        Starting at a randomly chosen cell checks
+        unvisited neighbours and removes the wall that
         separates the cell with its randomly chose neighbour.
         """
         for _ in range(15):
@@ -445,7 +446,7 @@ class MazeGenerator:
     def _two_paths(self) -> bool:
         """Checks if there are two possible paths from entry
         to exit within the maze grid.
-        
+
         Raises ValueError if entry/exit has not been inicialized.
         Returns a boolean value.
         """
@@ -476,7 +477,7 @@ class MazeGenerator:
         that are not included in the main path.
         3. Loops through each cell not included in main_path to carve
         alternative paths that reach them.
-        
+
         Raises ValueError if entry/exit has not been inicialized.
         """
         if self.entry is None or self.exit is None:
@@ -508,7 +509,7 @@ class MazeGenerator:
         are not included in the given path.
         Returns True as long as there are non static cells within the maze grid
         that are not included in the main path.
-        
+
         Parameters:
             main_path: list[Cell]
         Returns:
@@ -540,7 +541,7 @@ class MazeGenerator:
         """Makes a given cell accesible by building a path
         from the parameter path to any unvisited neighbours,
         using the BFS algorithm.
-        
+
         Parameters:
             start: Cell
         Returns:
@@ -614,9 +615,9 @@ class MazeGenerator:
             attempts += 1
 
     def _reduce_five_ends(self) -> None:
-        """Auxiliary function which aims to reduce the number of dead ends 
+        """Auxiliary function which aims to reduce the number of dead ends
         from a list of five cells.
-        
+
         Loops through each dead end and picks the neighbours which share
         a wall. Then randomly picks a candidate and breaks the wall they share.
         """
@@ -629,7 +630,7 @@ class MazeGenerator:
                     candidates.append(n)
             if not candidates:
                 continue
-            
+
             nb: Cell = self.rng.choice(candidates)
             self.remove_walls(cell, nb)
 
@@ -638,7 +639,7 @@ class MazeGenerator:
         maze grid.
         For each cell within the maze it check if it only has
         one open wall.
-                
+
         Returns:
             list[Cell].
         """
@@ -662,9 +663,9 @@ class MazeGenerator:
     def solve_maze_bfs(self, start: Cell, end: Cell) -> list[Cell]:
         """Solver function that provides the path from one start cell
         to the end cell using the BFS algorithm.
-                
+
         Raises ValueError if start/end has not been inicialized.
-        
+
         Parameters:
             start: Cell
             end: Cell
@@ -695,7 +696,7 @@ class MazeGenerator:
                        None = None) -> list[Cell]:
         """Solver function that provides the path from one start cell
         to the end cell using the DFS algorithm.
-                        
+
         Raises ValueError if start/end has not been inicialized.
         Parameters:
             start: Cell
@@ -704,8 +705,8 @@ class MazeGenerator:
             list[Cell] | []
         """
         if start is None or end is None:
-                    raise ValueError("Error: start and end must"
-                                     "be inicialized before solve dfs")
+            raise ValueError("Error: start and end must"
+                             "be inicialized before solve dfs")
 
         self.reset_visited()
 
@@ -750,9 +751,9 @@ class MazeGenerator:
         return path
 
     # def _check_3x3(self) -> bool:
-    #     """Checks a range of 3x3 cells to confirm if they don't 
+    #     """Checks a range of 3x3 cells to confirm if they don't
     #     share any walls amongst them.
-                
+
     #     Returns: boolean value.
     #     """
     #     for y in range(self.height - 2):
