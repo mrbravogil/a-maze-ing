@@ -104,9 +104,6 @@ class MazeApp:
         self.generator.carve_entrance_exit()
         self.generator.dfs_generate()
 
-        # if not self.config.perfect:
-        #     self.generator._create_multiple_paths()
-
         self.generator.reset_visited()
         self.solution = self.generator.solve_maze_bfs(
             self.generator.entry,
@@ -259,13 +256,15 @@ class MazeApp:
                     break
 
                 if choice == "1":
-                    if self.config.seed is None:
-                        self.config.seed = random.randint(1, 1000000)
+                    if not self.config.enabled_seed:
+                        self.config.seed = random.randint(1, 1000)
+                        print("Maze regenerated!")
+                        self._generate_maze()
+                        self._write_output()
                     else:
-                        self.config.seed += 1
-                    self._generate_maze()
-                    self._write_output()
-                    print("Maze regenerated!")
+                        print("Maze has a seed set. "
+                              "Cannot regenerate a new maze.")
+
                     input("Press Enter to continue...")
 
                 elif choice == "2":

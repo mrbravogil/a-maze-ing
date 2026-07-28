@@ -566,7 +566,7 @@ class MazeGenerator:
         4. Randomly picks one of the neighbours and destroys
         their sharing wall.
 
-        Tries to reduce dead ends to max of 2 during 1000 attemps.
+        Tries to reduce dead ends to max of 2 during 2000 attemps.
         """
         attempts: int = 0
 

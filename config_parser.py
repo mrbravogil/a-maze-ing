@@ -47,6 +47,7 @@ class Config:
     exit: tuple[int, int]
     output_file: str
     perfect: bool
+    enabled_seed: bool
     seed: int | None = None
     extra: dict[str, Any] | None = None
 
@@ -333,6 +334,7 @@ class ConfigParser:
             output_file=output_file,
             perfect=perfect,
             seed=seed,
+            enabled_seed=seed is not None,
             extra=extra if extra else None,
         )
 
