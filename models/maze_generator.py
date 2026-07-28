@@ -55,6 +55,7 @@ class MazeGenerator:
         )
 
         self.solutions: list[list[Cell]] = []
+        self.can_draw_42 = True
 
     def maze_init(self) -> None:
         """Initialize the maze grid with fresh cells.
@@ -78,23 +79,18 @@ class MazeGenerator:
         self.exit.exit = True
         self._validate_entry_exit()
         if self.width < 9 or self.height < 6:
-            print("Error: Maze size is too small for '42' pattern.")
+            self.can_draw_42 = False
         else:
             self.draw_fortytwo()
 
     def draw_fortytwo(self) -> None:
         """Draws the static "42" pattern in the center of the maze.
 
-        Raises an error if entry or exit haven't been initialized
-        and prints a warning message if the maze is two small to apply
-        the "42" pattern.
+        Raises an error if entry or exit haven't been initialized.
         """
         if self.entry is None or self.exit is None:
             raise ValueError("Entry/exit must be "
                              "initialized before draw_fortytwo().")
-
-        if self.width < 9 or self.height < 6:
-            print("Error: Maze size is too small for '42' pattern.")
 
         offset_x: int = (self.width - 9) // 2
         offset_y: int = max(1, (self.height - 5) // 2)

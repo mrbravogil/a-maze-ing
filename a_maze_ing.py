@@ -90,16 +90,22 @@ class MazeApp:
 
         Raises aValueError: If maze generation parameters are invalid.
         """
+
+        config = self.config
+        if config is None:
+            raise RuntimeError("Configuration not loaded.")
+
         self.generator = MazeGenerator(
-            width=self.config.width,
-            height=self.config.height,
-            entry_x=self.config.entry[0],
-            entry_y=self.config.entry[1],
-            exit_x=self.config.exit[0],
-            exit_y=self.config.exit[1],
-            perfect=self.config.perfect,
-            seed=self.config.seed,
+            width=config.width,
+            height=config.height,
+            entry_x=config.entry[0],
+            entry_y=config.entry[1],
+            exit_x=config.exit[0],
+            exit_y=config.exit[1],
+            perfect=config.perfect,
+            seed=config.seed,
         )
+
         self.generator.maze_init()
         self.generator.carve_entrance_exit()
         self.generator.dfs_generate()
@@ -143,16 +149,22 @@ class MazeApp:
     def _write_output(self) -> None:
         """Write the generated maze to the output file. """
         try:
-            with open(self.config.output_file, "w", encoding="utf-8") as f:
-                for row in self.generator.maze.grid:
+            config = self.config
+            generator = self.generator
+
+            if config is None or generator is None:
+                raise RuntimeError("Maze has not been generated.")
+
+            with open(config.output_file, "w") as f:
+                for row in generator.maze.grid:
                     line = "".join(self._cell_to_hex(cell) for cell in row)
                     f.write(line + "\n")
                 f.write("\n")
-                f.write(f"{self.config.entry[0]},{self.config.entry[1]}\n")
-                f.write(f"{self.config.exit[0]},{self.config.exit[1]}\n")
+                f.write(f"{config.entry[0]},{config.entry[1]}\n")
+                f.write(f"{config.exit[0]},{config.exit[1]}\n")
                 path_str = self._path_to_directions(self.solution)
                 f.write(path_str + "\n")
-            print(f"Maze written to: {self.config.output_file}")
+            print(f"Maze written to: {config.output_file}")
         except OSError as exc:
             print(f"Error writing output file: {exc}", file=sys.stderr)
             sys.exit(1)
@@ -163,9 +175,16 @@ class MazeApp:
         Returns a multi-line string representing the maze with walls,
         entrance, exit, solution path, and the "42" pattern.
         """
-        grid = self.generator.maze.grid
-        h = self.config.height
-        w = self.config.width
+        config = self.config
+        generator = self.generator
+
+        if config is None or generator is None:
+            raise RuntimeError("Maze has not been generated.")
+
+        grid = generator.maze.grid
+        h = config.height
+        w = config.width
+
         solution_set = {
             cell for cell in self.solution} if self.solution else set()
 
@@ -245,6 +264,9 @@ class MazeApp:
         """
         while True:
             try:
+                config = self.config
+                if config is None:
+                    raise RuntimeError("Configuration not loaded.")
                 os.system("cls" if os.name == "nt" else "clear")
                 print(self._render_ascii())
                 self._display_menu()
@@ -256,8 +278,8 @@ class MazeApp:
                     break
 
                 if choice == "1":
-                    if not self.config.enabled_seed:
-                        self.config.seed = random.randint(1, 1000)
+                    if not config.enabled_seed:
+                        config.seed = random.randint(1, 1000)
                         print("Maze regenerated!")
                         self._generate_maze()
                         self._write_output()
@@ -322,6 +344,12 @@ class MazeApp:
         except ValueError as exc:
             print(f"Maze generation error: {exc}", file=sys.stderr)
             sys.exit(1)
+
+        if (self.generator is not None
+                and not self.generator.can_draw_42):
+            print("Warning: Maze is too small to display the '42' pattern.")
+
+        input("Press Enter to continue...")
 
         print(f"Maze generated! Path length: {len(self.solution)} steps")
         self._write_output()

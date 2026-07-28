@@ -15,7 +15,6 @@ Example configuration file:
 """
 
 import os
-import sys
 
 from dataclasses import dataclass
 from typing import Any
@@ -283,13 +282,6 @@ class ConfigParser:
             raise ConfigError(
                 f"Output directory does not exist: '{parent_dir}'")
 
-    def _warn_maze_size(self, width: int, height: int) -> None:
-        """Print a warning if the maze may be too small for the '42' pattern.
-        """
-        if width < 9 or height < 6:
-            print(f"Warning: Maze size ({width}x{height}) may be too small",
-                  file=sys.stderr)
-
     def parse(self) -> Config:
         """Parse the configuration file and return a Config instance.
 
@@ -313,7 +305,6 @@ class ConfigParser:
 
         self._validate_entry_exit_bounds(entry, exit_coords, width, height)
         self._validate_output_path(output_file)
-        self._warn_maze_size(width, height)
 
         seed = None
         extra = {}
