@@ -584,6 +584,8 @@ class MazeGenerator:
 
             nb: Cell = self.rng.choice(candidates)
             self.remove_walls(cell, nb)
+            nb = self.rng.choice(candidates)
+            self.remove_walls(cell, nb)
             attempts += 1
 
     def _reduce_five_ends(self) -> None:
@@ -602,9 +604,8 @@ class MazeGenerator:
                     candidates.append(n)
             if not candidates:
                 continue
-
-            nb: Cell = self.rng.choice(candidates)
-            self.remove_walls(cell, nb)
+            for c in candidates:
+                self.remove_walls(cell, c)
 
     def _count_dead_ends(self) -> list[Cell]:
         """Counts how many dead end cells exist within the
