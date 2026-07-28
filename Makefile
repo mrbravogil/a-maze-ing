@@ -8,6 +8,9 @@ PIP      = pip
 all: run
 
 install:
+	$(PYTHON) -m $(PIP) install flake8 mypy
+
+install-user:
 	$(PYTHON) -m $(PIP) install --user flake8 mypy
 
 run:
