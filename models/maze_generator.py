@@ -44,8 +44,8 @@ class MazeGenerator:
 
         self._validate_entry_exit()
 
-        self.entry: Cell | None = None
-        self.exit: Cell | None = None
+        self.entry: Cell = Cell(x=entry_x, y=entry_y, walls=15, entrance=True)
+        self.exit: Cell = Cell(x=exit_x, y=exit_y, walls=15, entrance=True)
 
         self.maze = Maze(
             width=width,

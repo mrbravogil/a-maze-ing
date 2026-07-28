@@ -1,6 +1,7 @@
 PACKAGE  = a_maze_ing
 NAME     = a_maze_ing.py
-SRC      = a_maze_ing.py a_maze_ing
+CONFIG   = config.txt
+SRC      = .
 PYTHON   = python3
 PIP      = pip
 
@@ -10,7 +11,7 @@ install:
 	$(PYTHON) -m $(PIP) install --user flake8 mypy
 
 run:
-	$(PYTHON) $(NAME)
+	$(PYTHON) $(NAME) $(CONFIG)
 
 debug:
 	$(PYTHON) -m pdb $(NAME)
@@ -26,8 +27,6 @@ lint:
 
 package:
 	$(PYTHON) setup.py sdist bdist_wheel
-	mv dist/*.tar.gz .
-	mv dist/*.whl .
 
 clean:
 	rm -rf dist/ build/ *.egg-info
